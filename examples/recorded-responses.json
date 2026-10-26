@@ -1,0 +1,128 @@
+{
+  "purpose": "Independently scripted offline demonstration; not measured model accuracy.",
+  "response_order": [
+    "updater",
+    "q1 full_history",
+    "q1 active_memory",
+    "q2 active_memory",
+    "q2 full_history"
+  ],
+  "responses": [
+    {
+      "facts": [
+        {
+          "entity_id": "release-1",
+          "field": "owner",
+          "value": "Leon Park",
+          "evidence_event_ids": [
+            "e3"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "status",
+          "value": "active",
+          "evidence_event_ids": [
+            "e1"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "due_date",
+          "value": "2027-02-20",
+          "evidence_event_ids": [
+            "e1"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "pending_due_date",
+          "value": "2027-02-25",
+          "evidence_event_ids": [
+            "e2"
+          ]
+        }
+      ]
+    },
+    {
+      "facts": [
+        {
+          "entity_id": "release-1",
+          "field": "owner",
+          "value": "Leon Park",
+          "evidence_event_ids": [
+            "e3"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "due_date",
+          "value": "2027-02-20",
+          "evidence_event_ids": [
+            "e1"
+          ]
+        }
+      ]
+    },
+    {
+      "facts": [
+        {
+          "entity_id": "release-1",
+          "field": "owner",
+          "value": "Leon Park",
+          "evidence_event_ids": [
+            "e3"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "due_date",
+          "value": "2027-02-20",
+          "evidence_event_ids": [
+            "e1"
+          ]
+        }
+      ]
+    },
+    {
+      "facts": [
+        {
+          "entity_id": "release-1",
+          "field": "pending_due_date",
+          "value": "2027-02-25",
+          "evidence_event_ids": [
+            "e2"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "status",
+          "value": "active",
+          "evidence_event_ids": [
+            "e1"
+          ]
+        }
+      ]
+    },
+    {
+      "facts": [
+        {
+          "entity_id": "release-1",
+          "field": "pending_due_date",
+          "value": "2027-02-25",
+          "evidence_event_ids": [
+            "e2"
+          ]
+        },
+        {
+          "entity_id": "release-1",
+          "field": "status",
+          "value": "active",
+          "evidence_event_ids": [
+            "e1"
+          ]
+        }
+      ]
+    }
+  ]
+}

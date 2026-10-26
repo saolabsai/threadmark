@@ -1,0 +1,438 @@
+{
+  "title": "Threadmark Workflow / SaoLabs AI",
+  "schema": "threadmark-workflow-public-summary-v1",
+  "status": "completed",
+  "workflow_count": 90,
+  "query_count_per_arm": 360,
+  "model": "gpt-5.6-luna",
+  "updater_chunk_tokens": 2000,
+  "overall": {
+    "full_history": {
+      "planned": 360,
+      "correct": 349,
+      "evidence_correct": 347,
+      "completed": 360,
+      "accuracy": 0.9694444444444444
+    },
+    "active_memory": {
+      "planned": 360,
+      "correct": 346,
+      "evidence_correct": 343,
+      "completed": 354,
+      "accuracy": 0.9611111111111111
+    },
+    "regressions": 11,
+    "improvements": 8,
+    "both_wrong": 3
+  },
+  "by_domain": {
+    "meeting": {
+      "full_history": {
+        "planned": 120,
+        "correct": 116,
+        "evidence_correct": 115,
+        "completed": 120,
+        "accuracy": 0.9666666666666667
+      },
+      "active_memory": {
+        "planned": 120,
+        "correct": 113,
+        "evidence_correct": 113,
+        "completed": 114,
+        "accuracy": 0.9416666666666667
+      },
+      "regressions": 6,
+      "improvements": 3,
+      "both_wrong": 1
+    },
+    "project": {
+      "full_history": {
+        "planned": 120,
+        "correct": 117,
+        "evidence_correct": 116,
+        "completed": 120,
+        "accuracy": 0.975
+      },
+      "active_memory": {
+        "planned": 120,
+        "correct": 115,
+        "evidence_correct": 114,
+        "completed": 120,
+        "accuracy": 0.9583333333333334
+      },
+      "regressions": 3,
+      "improvements": 1,
+      "both_wrong": 2
+    },
+    "support": {
+      "full_history": {
+        "planned": 120,
+        "correct": 116,
+        "evidence_correct": 116,
+        "completed": 120,
+        "accuracy": 0.9666666666666667
+      },
+      "active_memory": {
+        "planned": 120,
+        "correct": 118,
+        "evidence_correct": 116,
+        "completed": 120,
+        "accuracy": 0.9833333333333333
+      },
+      "regressions": 2,
+      "improvements": 4,
+      "both_wrong": 0
+    }
+  },
+  "by_band": {
+    "2048": {
+      "full_history": {
+        "planned": 120,
+        "correct": 117,
+        "evidence_correct": 117,
+        "completed": 120,
+        "accuracy": 0.975
+      },
+      "active_memory": {
+        "planned": 120,
+        "correct": 115,
+        "evidence_correct": 115,
+        "completed": 120,
+        "accuracy": 0.9583333333333334
+      },
+      "regressions": 3,
+      "improvements": 1,
+      "both_wrong": 2
+    },
+    "8192": {
+      "full_history": {
+        "planned": 120,
+        "correct": 118,
+        "evidence_correct": 118,
+        "completed": 120,
+        "accuracy": 0.9833333333333333
+      },
+      "active_memory": {
+        "planned": 120,
+        "correct": 114,
+        "evidence_correct": 113,
+        "completed": 115,
+        "accuracy": 0.95
+      },
+      "regressions": 6,
+      "improvements": 2,
+      "both_wrong": 0
+    },
+    "16384": {
+      "full_history": {
+        "planned": 120,
+        "correct": 114,
+        "evidence_correct": 112,
+        "completed": 120,
+        "accuracy": 0.95
+      },
+      "active_memory": {
+        "planned": 120,
+        "correct": 117,
+        "evidence_correct": 115,
+        "completed": 119,
+        "accuracy": 0.975
+      },
+      "regressions": 2,
+      "improvements": 5,
+      "both_wrong": 1
+    }
+  },
+  "cost_by_stage": {
+    "updater": {
+      "requests": 478,
+      "known_api_cost_usd": 0.6114190000000003,
+      "input_tokens_known": 1431199,
+      "output_tokens_known": 211409,
+      "cache_write_tokens_known": 1429768,
+      "usage_unknown_requests": 1
+    },
+    "full_history": {
+      "requests": 360,
+      "known_api_cost_usd": 0.9026679999999999,
+      "input_tokens_known": 3483520,
+      "output_tokens_known": 26535,
+      "cache_write_tokens_known": 3482440,
+      "usage_unknown_requests": 0
+    },
+    "active_memory": {
+      "requests": 356,
+      "known_api_cost_usd": 0.20547129999999986,
+      "input_tokens_known": 696952,
+      "output_tokens_known": 26072,
+      "cache_write_tokens_known": 695890,
+      "usage_unknown_requests": 2
+    }
+  },
+  "first_question_cost_usd": {
+    "full_history": 0.22612,
+    "active_memory": 0.6613410000000003
+  },
+  "first_question_service_time_median_seconds": {
+    "full_history": 2.5251304000266828,
+    "active_memory": 24.479875400080346
+  },
+  "first_question_timing_coverage": {
+    "full_history": 90,
+    "active_memory": 89
+  },
+  "query_service_time_median_seconds": {
+    "full_history": 2.3330014999955893,
+    "active_memory": 2.2016614499734715
+  },
+  "ingestion_median_seconds": 22.893708649964537,
+  "memory_bytes_median": 1540,
+  "total_cost_usd": 1.7195583,
+  "memory_four_question_cost_usd": 0.8168903000000001,
+  "memory_four_question_input_tokens": 2128151,
+  "reader_input_reduction": 0.799928807642844,
+  "lifecycle_input_reduction": 0.389080298089289,
+  "memory_pipeline": {
+    "planned_workflows": 90,
+    "recorded_workflows": 90,
+    "successful_workflows": 89,
+    "pipeline_failed_workflows": 1,
+    "state_fields_correct": 1336,
+    "state_fields_planned": 1380,
+    "state_field_accuracy_over_planned": 0.9681159420289855,
+    "ingestion_seconds_total": 2420.8703906001756,
+    "ingestion_api_seconds_total": 2420.8703906001756,
+    "pipeline_failure_fallback_trigger_workflows": 1,
+    "pipeline_failure_fallback_trigger_rate_over_planned": 0.011111111111111112,
+    "fallback_trigger_scope": "Observable pipeline/format/transport failures only; valid but semantically wrong states are not detectable by this trigger. No fallback is executed."
+  },
+  "concurrency": 4,
+  "manifest": {
+    "generator": "structured-workflow-data-v1",
+    "seed": 20261027,
+    "split": "test",
+    "protocol_sha256": "2e0333ca51ef85036280ee787b6091d2eb22a941dcfd0f2b83633207066fd571",
+    "generator_sha256": "4eb3f8585660a6e1eb55fde82f3d3fd4328376e6263d6b7399e85181e0d77379",
+    "workflows": 90,
+    "queries_per_workflow": 4,
+    "size_bands": [
+      2048,
+      8192,
+      16384
+    ],
+    "history_token_encoding": "o200k_base supplied by caller; history includes event metadata only",
+    "tolerance": 0.1,
+    "per_domain_band": 10,
+    "synthetic": true,
+    "dependent_variants": false,
+    "independent_across_bands": true,
+    "split_limitation": "Different instance seeds and some opening/update phrasing; shared scenario structure and finite contextual paragraphs. Not unseen template families.",
+    "inference_allowlist": [
+      "entity_catalog",
+      "events",
+      "queries.query_id",
+      "queries.text",
+      "queries.requested_facts"
+    ],
+    "evidence_contract": "For each current fact, cite its latest direct setting or confirming message. An explicit unknown or cleared fact has value null and cites that message. A field never established has value null and an empty evidence list. Proposals and drafts do not overwrite approved facts. A message changes only the fields it explicitly states; keep other fields unchanged.",
+    "scope": "Two entities, fourteen or sixteen typed current facts, explicit authorized decisions; synthetic workflow tracking, not general reasoning or real customer email."
+  },
+  "notes": [
+    "New structured memory workflow using Luna updater and reader; not the trained weekday adapter.",
+    "The active_memory arm is memory-guided evidence retrieval, not state-only answering. Predicted memory selects cited original events for requested facts; the reader receives only these sources plus the newest whole-event suffix within 1024 o200k tokens, deduplicated chronologically. Memory values are never supplied to the reader.",
+    "Active answers may cite only original event IDs actually present in the supplied source packet; state accuracy is measured separately from reader accuracy.",
+    "Source selection uses public requested fields and predicted memory only, without expected answers or gold state. The source union is capped at 20000 UTF-8 bytes; overflow fails that query without truncation or paid fallback.",
+    "All initial and incremental memory construction costs are included. Memory is reused only within one workflow.",
+    "Every planned query remains in accuracy denominators, including pipeline failures and unattempted queries.",
+    "No automatic paid fallback or retry. Invalid memory stops that memory pipeline; the full-history arm still runs.",
+    "Provider, transport, unusable usage or budget failures stop further paid dispatch while in-flight calls drain.",
+    "Request wall time excludes executor queueing and includes budget-ledger overhead; concurrent workload timing is not serial service latency.",
+    "Ingestion is reported separately from reader latency; do not compare query-only savings with full lifecycle costs.",
+    "Four questions are asked about final state after complete ingestion; this experiment does not interleave questions with incoming events.",
+    "Fact values use exact canonical strings/null. Evidence correctness is scored separately from value correctness.",
+    "An explicit operational continuation followed the original stopped run. Original attempts, including provider failures, remain unchanged and were not retried. New transport is limited to previously unattempted requests.",
+    "Aggregate ingestion_seconds is the sum of recorded updater API seconds across original and continuation segments. Original ingestion wall time is retained separately when available. Replay CPU time is excluded. The interruption changes cache and concurrency conditions.",
+    "Known API spend excludes the cost of the retained unknown-usage failure. Its conservative reservation remains held in both run and project budgets.",
+    "An explicit operational continuation followed the original stopped run. Original attempts, including provider failures, remain unchanged and were not retried. New transport is limited to previously unattempted requests.",
+    "Aggregate ingestion_seconds is the sum of recorded updater API seconds across original and continuation segments. Original ingestion wall time is retained separately when available. Replay CPU time is excluded. The interruption changes cache and concurrency conditions.",
+    "Known API spend excludes the cost of the retained unknown-usage failure. Its conservative reservation remains held in both run and project budgets."
+  ],
+  "source_hashes": {
+    "dataset": "b88fc69d9f2063d516599c24226fb1add7c5dba3a4513f71b42e36ff8b7cdd9d",
+    "protocol": "fee8144ce1437fa147a1353aca198fcab905a12bf07125275abab877efe754ca",
+    "request_plan": "db4ead6303ff68a93e170e3dd9c03b73b14763fe8895aabecef7a62c2b02af29"
+  },
+  "actual_history_sizes": {
+    "2048": {
+      "min": 1846,
+      "median": 1904.5,
+      "max": 1960,
+      "min_events": 15,
+      "max_events": 16,
+      "mean_decision_body_token_fraction": 0.4249669454019745
+    },
+    "8192": {
+      "min": 7407,
+      "median": 7450.5,
+      "max": 7612,
+      "min_events": 60,
+      "max_events": 64,
+      "mean_decision_body_token_fraction": 0.4306459993805114
+    },
+    "16384": {
+      "min": 14777,
+      "median": 14875.5,
+      "max": 15215,
+      "min_events": 120,
+      "max_events": 128,
+      "mean_decision_body_token_fraction": 0.4323059914030428
+    }
+  },
+  "cache_hit_tokens_by_stage": {
+    "updater": 0,
+    "full_history": 0,
+    "active_memory": 0
+  },
+  "reader_context": "Original source events selected by predicted-memory citations for the requested fields, plus a fixed recent-event window. Stored fact values are not passed to the reader. Selection uses no gold labels.",
+  "unknown_usage_requests": 3,
+  "operational_continuation": true,
+  "active_semantic_errors": 8,
+  "active_unavailable_answers": 6,
+  "cost_by_band": {
+    "2048": {
+      "updater": {
+        "requests": 59,
+        "known_api_cost_usd": 0.0662593,
+        "input_tokens_known": 139903,
+        "output_tokens_known": 26077,
+        "cache_write_tokens_known": 139726,
+        "usage_unknown_requests": 0
+      },
+      "full_history": {
+        "requests": 120,
+        "known_api_cost_usd": 0.10040239999999997,
+        "input_tokens_known": 359264,
+        "output_tokens_known": 8837,
+        "cache_write_tokens_known": 358904,
+        "usage_unknown_requests": 0
+      },
+      "active_memory": {
+        "requests": 120,
+        "known_api_cost_usd": 0.06942850000000006,
+        "input_tokens_known": 235330,
+        "output_tokens_known": 8845,
+        "cache_write_tokens_known": 234970,
+        "usage_unknown_requests": 0
+      }
+    },
+    "8192": {
+      "updater": {
+        "requests": 149,
+        "known_api_cost_usd": 0.18908814999999993,
+        "input_tokens_known": 440347,
+        "output_tokens_known": 65853,
+        "cache_write_tokens_known": 439903,
+        "usage_unknown_requests": 1
+      },
+      "full_history": {
+        "requests": 120,
+        "known_api_cost_usd": 0.28043899999999994,
+        "input_tokens_known": 1079396,
+        "output_tokens_known": 8840,
+        "cache_write_tokens_known": 1079036,
+        "usage_unknown_requests": 0
+      },
+      "active_memory": {
+        "requests": 116,
+        "known_api_cost_usd": 0.06679460000000002,
+        "input_tokens_known": 226625,
+        "output_tokens_known": 8463,
+        "cache_write_tokens_known": 226280,
+        "usage_unknown_requests": 1
+      }
+    },
+    "16384": {
+      "updater": {
+        "requests": 270,
+        "known_api_cost_usd": 0.35607155,
+        "input_tokens_known": 850949,
+        "output_tokens_known": 119479,
+        "cache_write_tokens_known": 850139,
+        "usage_unknown_requests": 0
+      },
+      "full_history": {
+        "requests": 120,
+        "known_api_cost_usd": 0.5218266000000001,
+        "input_tokens_known": 2044860,
+        "output_tokens_known": 8858,
+        "cache_write_tokens_known": 2044500,
+        "usage_unknown_requests": 0
+      },
+      "active_memory": {
+        "requests": 120,
+        "known_api_cost_usd": 0.06924819999999997,
+        "input_tokens_known": 234997,
+        "output_tokens_known": 8764,
+        "cache_write_tokens_known": 234640,
+        "usage_unknown_requests": 1
+      }
+    }
+  },
+  "development_pilots": [
+    {
+      "label": "Initial pilot",
+      "workflows": 6,
+      "planned_queries_per_arm": 24,
+      "full_history_correct": 24,
+      "memory_correct": 20,
+      "updater_chunk_tokens": 2000,
+      "known_api_cost_usd": 0.072739,
+      "report_sha256": "05ed4e260b75d28d10ffeca7170d91881f4ca9129ad501f9c7b86e385851ae76",
+      "runner_sha256": "b62d1165f1710f6543afb26e2e2cefdfd26669c1512657a9565012593bf357be"
+    },
+    {
+      "label": "Revised pilot",
+      "workflows": 6,
+      "planned_queries_per_arm": 24,
+      "full_history_correct": 24,
+      "memory_correct": 23,
+      "updater_chunk_tokens": 2000,
+      "known_api_cost_usd": 0.07461854999999999,
+      "report_sha256": "af590e137af857d543becd9f3030628150a500eb5686605101e8cb4573021c54",
+      "runner_sha256": "9389453fa55409df6d9c8bbaf885dc057f67fbe41d095198846221ecbb86f107"
+    },
+    {
+      "label": "Selected-case smaller-batch diagnostic",
+      "workflows": 1,
+      "planned_queries_per_arm": 4,
+      "full_history_correct": 4,
+      "memory_correct": 1,
+      "updater_chunk_tokens": 1000,
+      "known_api_cost_usd": 0.01232886,
+      "report_sha256": "04502e2dd149dd4d15cf016562da03847270d107da0ed0dce4014f5d3f1cc3a9",
+      "runner_sha256": "6b3e48e9ada3cbd732d20f3190e4b78b80401a226a2eefcf860b8e63d83f3521"
+    },
+    {
+      "label": "Selected-case state-and-evidence diagnostic",
+      "workflows": 1,
+      "planned_queries_per_arm": 4,
+      "full_history_correct": 4,
+      "memory_correct": 3,
+      "updater_chunk_tokens": 2000,
+      "known_api_cost_usd": 0.01646242,
+      "report_sha256": "7a1354c54353b04f754d6e0e4712bcee41f5d87b592ba27e3327745541a66118",
+      "runner_sha256": "3bde0632d28f433fcd2e40b9ed934b74bcf7e348615efa37311bbffee52e751b"
+    },
+    {
+      "label": "Selected-case memory-guided evidence diagnostic",
+      "workflows": 1,
+      "planned_queries_per_arm": 4,
+      "full_history_correct": 4,
+      "memory_correct": 4,
+      "updater_chunk_tokens": 2000,
+      "known_api_cost_usd": 0.0062809300000000005,
+      "report_sha256": "2d198de258c8c5021790514c18256ed33ad1c803742b08386763b090df9f0bf3",
+      "runner_sha256": "32b1ef716a9ba6db6d6ce41ce089e90d8b7d4a617a022ce81a7cfde8d48c1561"
+    }
+  ]
+}

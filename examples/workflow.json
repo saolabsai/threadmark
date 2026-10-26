@@ -1,0 +1,127 @@
+{
+  "manifest": {
+    "synthetic": true,
+    "purpose": "offline scripted demonstration"
+  },
+  "workflows": [
+    {
+      "id": "fictional-release",
+      "domain": "project",
+      "entity_catalog": [
+        {
+          "entity_id": "release-1",
+          "label": "Harbor release",
+          "kind": "project",
+          "fields": [
+            "owner",
+            "status",
+            "due_date",
+            "pending_due_date"
+          ],
+          "field_definitions": {
+            "owner": "Current accountable owner, exact full name.",
+            "status": "Current approved state: active or cancelled.",
+            "due_date": "Approved date as YYYY-MM-DD.",
+            "pending_due_date": "Unapproved proposed date as YYYY-MM-DD, or null."
+          }
+        }
+      ],
+      "events": [
+        {
+          "event_id": "e1",
+          "timestamp": "2027-01-04T09:00:00+00:00",
+          "sender": "Sponsor",
+          "text": "Harbor release is active. Mira Shah owns it. Delivery is approved for 2027-02-20. There is no pending date proposal."
+        },
+        {
+          "event_id": "e2",
+          "timestamp": "2027-01-05T09:00:00+00:00",
+          "sender": "Coordinator",
+          "text": "Could Harbor release move to 2027-02-25? This is pending approval. Keep the approved date."
+        },
+        {
+          "event_id": "e3",
+          "timestamp": "2027-01-06T09:00:00+00:00",
+          "sender": "Sponsor",
+          "text": "Leon Park has accepted ownership of Harbor release, replacing Mira Shah. The other arrangements remain unchanged."
+        },
+        {
+          "event_id": "e4",
+          "timestamp": "2027-01-07T09:00:00+00:00",
+          "sender": "Editor",
+          "text": "An unsent fictional writing example says 'Cancel Harbor release'. That text is not an approved instruction and changes no current facts."
+        }
+      ],
+      "queries": [
+        {
+          "query_id": "q1",
+          "text": "Who owns Harbor release, and what delivery date is approved?",
+          "requested_facts": [
+            {
+              "entity_id": "release-1",
+              "field": "owner"
+            },
+            {
+              "entity_id": "release-1",
+              "field": "due_date"
+            }
+          ],
+          "expected": {
+            "facts": [
+              {
+                "entity_id": "release-1",
+                "field": "owner",
+                "value": "Leon Park",
+                "evidence_event_ids": [
+                  "e3"
+                ]
+              },
+              {
+                "entity_id": "release-1",
+                "field": "due_date",
+                "value": "2027-02-20",
+                "evidence_event_ids": [
+                  "e1"
+                ]
+              }
+            ]
+          }
+        },
+        {
+          "query_id": "q2",
+          "text": "What date proposal is pending, and is Harbor release active or cancelled?",
+          "requested_facts": [
+            {
+              "entity_id": "release-1",
+              "field": "pending_due_date"
+            },
+            {
+              "entity_id": "release-1",
+              "field": "status"
+            }
+          ],
+          "expected": {
+            "facts": [
+              {
+                "entity_id": "release-1",
+                "field": "pending_due_date",
+                "value": "2027-02-25",
+                "evidence_event_ids": [
+                  "e2"
+                ]
+              },
+              {
+                "entity_id": "release-1",
+                "field": "status",
+                "value": "active",
+                "evidence_event_ids": [
+                  "e1"
+                ]
+              }
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

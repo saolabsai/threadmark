@@ -1,0 +1,43 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "saolabs-threadmark"
+version = "0.1.0"
+description = "Source-backed working memory for evolving AI workflows"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{name = "SaoLabs AI"}]
+keywords = ["llm", "memory", "retrieval", "evaluation"]
+dependencies = ["tiktoken>=0.7,<1"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10", "build>=1.2,<2", "black==26.10.1"]
+
+[project.urls]
+Homepage = "https://github.com/saolabsai/threadmark"
+Documentation = "https://github.com/saolabsai/threadmark/tree/main/docs"
+Issues = "https://github.com/saolabsai/threadmark/issues"
+Research = "https://threadmark-research-20261027.viikys.chatgpt.site/"
+
+[project.scripts]
+threadmark = "threadmark.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+threadmark = ["py.typed", "data/*.json"]
