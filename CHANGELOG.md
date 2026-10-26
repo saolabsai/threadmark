@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Added a repository research note, downloadable PDF, mathematical design, and annotated bibliography that distinguish the original latent-memory proposal from the implemented explicit register and evidence retrieval.
+- Replaced external hosted-page links with repository documentation and the preserved redacted evidence archive. Included research and benchmark evidence in the source distribution.
+
 ## 0.1.0 — 2026-10-27
 
 - Extracted the workflow prototype into a reusable Python package with a provider interface, explicit settings, source selection, validation, scoring, and budget controls.

@@ -5,3 +5,5 @@
 *.yml text eol=lf
 *.toml text eol=lf
 LICENSE text eol=lf
+*.pdf binary
+*.zip binary

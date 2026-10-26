@@ -26,12 +26,13 @@ classifiers = [
 
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "build>=1.2,<2", "black==26.10.1"]
+paper = ["reportlab>=4,<5", "matplotlib>=3.8,<4"]
 
 [project.urls]
 Homepage = "https://github.com/saolabsai/threadmark"
 Documentation = "https://github.com/saolabsai/threadmark/tree/main/docs"
 Issues = "https://github.com/saolabsai/threadmark/issues"
-Research = "https://threadmark-research-20261027.viikys.chatgpt.site/"
+Research = "https://github.com/saolabsai/threadmark/blob/main/research/threadmark.md"
 
 [project.scripts]
 threadmark = "threadmark.cli:main"

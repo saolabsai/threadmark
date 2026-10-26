@@ -2,6 +2,8 @@
 
 Threadmark reduces the history a reader model must inspect for questions about changing workflow facts. It retains the original records and maintains a compact register that points back to them.
 
+The [research note](../research/threadmark.md) and [PDF](../research/threadmark.pdf) develop the mathematical design and distinguish the original latent-memory proposal from this implemented system. The [annotated bibliography](../research/references.md) identifies related papers and their relevance. This release uses explicit state and source retrieval, and does not reproduce a latent-memory architecture from a paper.
+
 ## A plain-language example
 
 A project starts with Maya as owner and a Friday deadline. Later, an approved update transfers ownership to Sam. A draft proposes Tuesday, but no one approves it. The register should say **Sam / Friday**, with source IDs for the two approved decisions.
@@ -46,7 +48,7 @@ answer(q) = R(q, E_t(q), catalog)
 
 The original experiment used approximately 2,000 `o200k_base` tokens per updater chunk, up to 1,024 updater output tokens, and up to 256 reader output tokens. Selection added the newest whole-event suffix that fit within 1,024 tokens. The union of selected original sources was capped at 20,000 UTF-8 bytes. Predicted memory was capped at 12,000 bytes, with at most two evidence IDs per field.
 
-These are implementation limits, not established optimal settings. The public evidence archive contains the exact frozen prompts, protocol, and runner. The refactored library exposes configuration separately; changing a limit creates a different experiment.
+These are implementation limits, not established optimal settings. The [frozen evidence archive](../benchmarks/workflow-2026-10-27-evidence.zip) contains the exact prompts, protocol, and original runner, with private runtime details redacted. The refactored library exposes configuration separately; changing a limit creates a different experiment.
 
 ## Rules for changing facts
 
