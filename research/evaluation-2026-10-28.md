@@ -15,6 +15,8 @@ The fresh final test used 12 workflows across three domains, two history-size ba
 
 State and full history were both correct on 44 questions. State was uniquely correct on two, and full history was uniquely correct on two. Equal aggregate scores therefore retain **two regressions and two improvements**, rather than identical answers or zero quality loss. The two state failures returned `pending_scope` values with literal surrounding single quotes. The required canonical values were unquoted, so both remain incorrect under the frozen exact-value contract. No output normalization or regrading was applied.
 
+Auditing every stored field, including fields outside the questions, found **180/184 exact field values and 10/12 completely correct registers**. Two additional unqueried `approved_scope` values also retained surrounding single quotes. All four field mismatches remain errors; query accuracy alone does not establish that every stored fact is correct.
+
 State lookup made no query-time language-model call or original-source content selection. Its **$0.1854587** includes every extraction call and is **13.1% higher** than full history's **$0.1639632** for four questions per workflow. The run dispatched 228 API calls at a known total of **$0.42743115** across all four arms. Local dense-encoder hardware, energy, and engineering costs are unpriced.
 
 | Measured wall-time total | Full history | Sparse-event state |
