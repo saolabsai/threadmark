@@ -1,6 +1,10 @@
 # Threadmark research
 
+Read the [October 28 evaluation note](evaluation-2026-10-28.md) for the completed sparse-event comparison, preserved register/retrieval comparison, and separately trained SmolLM2-versus-Qwen component test. Each experiment retains its own protocol, results, and limitations, including earlier negative results.
+
 Read the [technical note](threadmark.md) on GitHub or download the [PDF](threadmark.pdf). It describes the implemented method and benchmark, then separately develops the proposed latent VSLM and decoder connection. The [annotated references](references.md) and [BibTeX](references.bib) attribute the four papers that informed the original proposal.
+
+The original PDF remains unchanged. Newer evaluation results are recorded in the dated Markdown note and their evidence archives, rather than presented as though they appeared in the original paper.
 
 The technical note is experimental engineering documentation, not a peer-reviewed publication. The formulas describe this project's implementation and proposal; the repository does not reproduce the cited papers' models or claim their results.
 

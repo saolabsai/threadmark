@@ -27,6 +27,7 @@ classifiers = [
 [project.optional-dependencies]
 dev = ["pytest>=8,<10", "build>=1.2,<2", "black==26.10.1"]
 paper = ["reportlab>=4,<5", "matplotlib>=3.8,<4"]
+local = ["torch>=2.6,<3", "transformers>=4.53,<5", "safetensors>=0.4,<1"]
 
 [project.urls]
 Homepage = "https://github.com/saolabsai/threadmark"
@@ -42,3 +43,6 @@ where = ["src"]
 
 [tool.setuptools.package-data]
 threadmark = ["py.typed", "data/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

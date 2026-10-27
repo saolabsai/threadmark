@@ -18,6 +18,7 @@ htmlcov/
 *.lock
 .runtime/
 runs/
+models/
 snapshots/
 .DS_Store
 Thumbs.db

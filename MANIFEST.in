@@ -1,6 +1,9 @@
 include LICENSE README.md CONTRIBUTING.md SECURITY.md CHANGELOG.md
 include scripts/build_research_pdf.py
+include scripts/compare_local.py
+include scripts/download_models.py
+include scripts/prepare_comparison_evidence.py
 recursive-include docs *.md
 recursive-include examples *.py *.json
 recursive-include benchmarks *.md *.json *.zip
-recursive-include research *.md *.bib *.pdf
+recursive-include research *.md *.bib *.pdf *.txt

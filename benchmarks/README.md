@@ -1,5 +1,19 @@
 # Benchmark artifacts
 
+## October 28 evaluations
+
+Read the [dated methodology and interpretation note](../research/evaluation-2026-10-28.md). These results are separate experiments and should not be pooled:
+
+| Experiment | Summary | Frozen evidence |
+| --- | --- | --- |
+| Sparse-event state versus full history, BM25, and dense retrieval | [Sparse-event comparison](rag-comparison-2026-10-28.json) | [Archive](rag-comparison-2026-10-28-evidence.zip) |
+| Register rewriting with six context strategies | [Register comparison](rag-register-comparison-2026-10-28.json) | [Archive](rag-register-comparison-2026-10-28-evidence.zip) |
+| Matched SmolLM2 versus Qwen weekday classifier | [Backbone comparison](backbone-comparison-2026-10-28.json) | [Archive](backbone-comparison-2026-10-28-evidence.zip) |
+
+The completed sparse-event comparison returned 46/48 exact state answers and 46/48 strict value-and-evidence answers. Full history also returned 46/48 exact values, with two paired gains and two regressions. Sparse-state lifecycle API cost was higher for the measured workload, so the result does not establish free ingestion or guaranteed savings. Register evidence retains negative development attempts and the original completed comparison. The backbone test measures typed weekday state, not unrestricted generated answers.
+
+## Original October 27 workflow study
+
 [`workflow-2026-10-27.json`](workflow-2026-10-27.json) is an unchanged copy of the redacted public `workflow-data.json` export for Threadmark's original 90-workflow experiment. It contains aggregate results, development pilot summaries, source hashes, costs, and limitations. It contains no API credentials or private project accounting.
 
 Export SHA-256: `4e1f3a2c9a42c0de6c51c9c127a4837b13f9ab73615f660440ce637ffee23b7b`.

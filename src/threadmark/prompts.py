@@ -1,10 +1,15 @@
-"""Verbatim prompts from the published workflow experiment.
+"""Legacy v1 prompts and explicit opt-in profiles for current-fact experiments.
 
 Provenance: prototype/workflow-poc/run_workflow.py,
 SHA-256: 32b1ef716a9ba6db6d6ce41ce089e90d8b7d4a617a022ce81a7cfde8d48c1561.
 Reader wording is preserved even where it mentions memory: the active path
 passes original source events only, never predicted fact values.
+The v1 constants remain verbatim defaults. Use ``prompt_profile`` explicitly to
+select packaged v2 instructions; prompt choice alone makes no accuracy promise.
 """
+
+from importlib.resources import files
+import json
 
 UPDATER_INSTRUCTIONS = (
     "Maintain the current facts of a workflow from the supplied catalog, prior memory and chronological new events. "
@@ -45,3 +50,28 @@ READER_INSTRUCTIONS = (
     "A generic statement that other fields are unchanged does not advance their evidence IDs. Unknown facts without evidence use []. "
     "Never invent an event ID or fill an unstated value. Return JSON only, without Markdown or explanation."
 )
+
+
+def prompt_profile(name: str = "current-facts-v2") -> dict[str, str]:
+    """Return constructor keyword arguments for an explicit packaged profile.
+
+    ``Threadmark(catalog, provider, **prompt_profile())`` binds these prompts to
+    that instance and preserves them in its snapshot. Text is stripped exactly
+    as in the comparison driver; the packaged JSON retains the research source.
+    """
+    if name != "current-facts-v2":
+        raise ValueError("Unknown prompt profile")
+    value = json.loads(
+        files("threadmark").joinpath("data", name + ".json").read_text(encoding="utf-8")
+    )
+    if not isinstance(value, dict) or set(value) != {
+        "updater_instructions",
+        "reader_instructions",
+    }:
+        raise ValueError("Invalid packaged prompt profile")
+    result = {}
+    for key, text in value.items():
+        if not isinstance(text, str) or not text.strip() or len(text) > 16_000:
+            raise ValueError("Invalid packaged prompt instruction")
+        result[key] = text.strip()
+    return result

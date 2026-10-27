@@ -1,0 +1,219 @@
+{
+  "audit": {
+    "api_calls": 0,
+    "arms": {
+      "candidate": {
+        "accuracy": 1.0,
+        "controls_correct": {
+          "active_memory": 160,
+          "swapped_memory": 17,
+          "wrong_memory": 0,
+          "zero_memory": 20
+        },
+        "correct": 160,
+        "event_metrics": {
+          "action_correct": 1612,
+          "events": 1612,
+          "set_day_correct": 316,
+          "set_events": 316,
+          "state_correct": 1612
+        },
+        "planned_cases": 160
+      },
+      "reference": {
+        "accuracy": 1.0,
+        "controls_correct": {
+          "active_memory": 160,
+          "swapped_memory": 17,
+          "wrong_memory": 0,
+          "zero_memory": 20
+        },
+        "correct": 160,
+        "event_metrics": {
+          "action_correct": 1612,
+          "events": 1612,
+          "set_day_correct": 316,
+          "set_events": 316,
+          "state_correct": 1612
+        },
+        "planned_cases": 160
+      }
+    },
+    "paired": {
+      "accuracy_difference_candidate_minus_reference": 0.0,
+      "both_correct": 160,
+      "both_wrong": 0,
+      "candidate_both_variants_correct": 80,
+      "candidate_only_correct": 0,
+      "counterfactual_pairs": 80,
+      "improvements": [],
+      "planned_cases": 160,
+      "reference_both_variants_correct": 80,
+      "reference_only_correct": 0,
+      "regressions": []
+    },
+    "schema": "threadmark-independent-backbone-audit-v1",
+    "scope": "Weekday/CLEAR/KEEP classifier component; no RAG or reader generation."
+  },
+  "canonical_recipe_sha256": "b53b72e8f7d11937c86098a06ae5b9e32f07a4fff662385abec744aa9af8ec65",
+  "canonical_report_sha256": "3476bfd7cb3bd5cbc8502c20a2d16cdefb4e1c2d84828279861ae4051b8b5d73",
+  "checkpoint_tensors_included": false,
+  "compatibility_smoke": {
+    "api_calls": 0,
+    "canonical_artifact_sha256": "c579a789772e7cc7c86685a5f4ebdcab3502243e768f9a0950b69b8fe3f71c65",
+    "fixture_match": true,
+    "generation_attempts": 1,
+    "hardware_cost_usd": null,
+    "input_tokens": 409,
+    "output_tokens": 35,
+    "scope": "One fictional local causal-generation compatibility fixture only; not a benchmark, training or tuning input."
+  },
+  "date": "2026-10-28",
+  "limitations": [
+    "Fresh seeded instances intentionally reuse v2 final wording families; not unseen-family generalization.",
+    "A single meeting with explicit weekday confirmations; no multi-entity facts or implicit acceptance.",
+    "Selected models may have different training histories, parameter counts and development quality; this is not an isolated causal test of backbone choice.",
+    "Both state arms and diagnostic controls score all 160 cases; counterfactual pairs are dependent observations.",
+    "Earlier test evidence may have been inspected during development; a seed refresh does not erase that historical knowledge."
+  ],
+  "matched_training": {
+    "note": "Matched requested schedules do not require the development-selected epoch to be identical for different backbones.",
+    "requested_schedules_match": true,
+    "training_data_bytes_match": true
+  },
+  "redaction_policy": "threadmark-comparison-public-evidence-v1",
+  "reproduction_note": "Checkpoint hashes identify selected local adapters; adapter/base tensors are not redistributed in this evidence archive.",
+  "schema": "threadmark-public-backbone-comparison-v1",
+  "selected_models": {
+    "candidate": {
+      "checkpoint_sha256": "d48e0f48b221bf134a4fd94a740b8809dcc7f8944ecfe4e4f5c47c6966595e4c",
+      "frozen_parameter_sha256": "d0b35f9332ea971fb0b617b35db0b11fdc7e1a5e14763a79e77cea9a4b9a8c5d",
+      "hidden_size": 2048,
+      "model_source": {
+        "canonical_url": "https://huggingface.co/HuggingFaceTB/SmolLM2-1.7B-Instruct/resolve/31b70e2e869a7173562077fd711b654946d38674/model.safetensors",
+        "repository": "HuggingFaceTB/SmolLM2-1.7B-Instruct",
+        "revision": "31b70e2e869a7173562077fd711b654946d38674",
+        "weight_bytes": 3422777952,
+        "weight_sha256": "f55217be716b6a997b97b9d8d7eb6fad02e00858f5010ec24f64603c3a98a0e8"
+      },
+      "model_type": "llama",
+      "rank": 8,
+      "selected_epoch": 0,
+      "tokenizer_render_signature": "5c90e4c19af422f02ce93fcb070486df668cbe4f36926ef58528c79d23f31623",
+      "training_chain": [
+        {
+          "checkpoint_sha256": "6626fd3eefd5f69b6afeba5166cfed6f5f9206d10e5d75f2966c7c902dd3a09b",
+          "completed_epochs": 3,
+          "development_report_sha256": "e75faa84f5a5cdee3650bf835c8387db4b95da0dd292895e4bd683e597d5935f",
+          "initialized_checkpoint_sha256": null,
+          "phase": 1,
+          "selected_epoch": 1,
+          "settings": {
+            "augment_events": 0,
+            "batch_size": 2,
+            "epochs": 3,
+            "learning_rate": 0.0001,
+            "rank": 8,
+            "seed": 20261028,
+            "train_count": 256
+          },
+          "training_data_sha256": {
+            "training-data.json": "68585ed7727c4ee948179a2570c781c0c6945d1ef6f02fe43cdb58a21f6ca749"
+          }
+        },
+        {
+          "checkpoint_sha256": "d48e0f48b221bf134a4fd94a740b8809dcc7f8944ecfe4e4f5c47c6966595e4c",
+          "completed_epochs": 2,
+          "development_report_sha256": "a1cbbaf0023bd2236a99181e35a251f8cf611ac925566fc5596c2b4784ec1d21",
+          "initialized_checkpoint_sha256": "6626fd3eefd5f69b6afeba5166cfed6f5f9206d10e5d75f2966c7c902dd3a09b",
+          "phase": 2,
+          "selected_epoch": 0,
+          "settings": {
+            "augment_events": 896,
+            "batch_size": 2,
+            "epochs": 2,
+            "learning_rate": 0.0001,
+            "rank": 8,
+            "seed": 20261028,
+            "train_count": 256
+          },
+          "training_data_sha256": {
+            "training-augmentation.json": "91ae329aca9c370ab4c47211790c08e0de1e016e2f77b8fba7ba4c2c295be39a",
+            "training-data.json": "68585ed7727c4ee948179a2570c781c0c6945d1ef6f02fe43cdb58a21f6ca749"
+          }
+        }
+      ],
+      "training_settings": {
+        "augment_events": 896,
+        "batch_size": 2,
+        "epochs": 2,
+        "learning_rate": 0.0001,
+        "rank": 8,
+        "seed": 20261028,
+        "train_count": 256
+      }
+    },
+    "reference": {
+      "checkpoint_sha256": "dbec78f840df39b580db117bd447ab698fcd85dacc3ed39c21494742a87c33fa",
+      "frozen_parameter_sha256": "d351f9251a59521effd7584d4dfef8bbab6d43eaf3fb6e5c9b5ff7d9629b71d9",
+      "hidden_size": 1024,
+      "model_type": "qwen3",
+      "rank": 8,
+      "selected_epoch": 1,
+      "tokenizer_render_signature": "8a512c28414f6ea220e09982f1997240956bfe3690f2d313bc9207896946be2b",
+      "training_chain": [
+        {
+          "checkpoint_sha256": "975f3faead37c9c4712f0ecc522def8841556b2d923f7d9307144ab2ecf44315",
+          "completed_epochs": 3,
+          "development_report_sha256": "21b72b6266e52be8cf3b527e555f18e12cf1cbf2eb7cd057d217929933a0f95b",
+          "initialized_checkpoint_sha256": null,
+          "phase": 1,
+          "selected_epoch": 3,
+          "settings": {
+            "augment_events": 0,
+            "batch_size": 2,
+            "epochs": 3,
+            "learning_rate": 0.0001,
+            "rank": 8,
+            "seed": 20261028,
+            "train_count": 256
+          },
+          "training_data_sha256": {
+            "training-data.json": "68585ed7727c4ee948179a2570c781c0c6945d1ef6f02fe43cdb58a21f6ca749"
+          }
+        },
+        {
+          "checkpoint_sha256": "dbec78f840df39b580db117bd447ab698fcd85dacc3ed39c21494742a87c33fa",
+          "completed_epochs": 2,
+          "development_report_sha256": "4a0f96a2f9904247ed68b4ae3139d14e095d17b00141386ab45ff29ce2b5dd33",
+          "initialized_checkpoint_sha256": "975f3faead37c9c4712f0ecc522def8841556b2d923f7d9307144ab2ecf44315",
+          "phase": 2,
+          "selected_epoch": 1,
+          "settings": {
+            "augment_events": 896,
+            "batch_size": 2,
+            "epochs": 2,
+            "learning_rate": 0.0001,
+            "rank": 8,
+            "seed": 20261028,
+            "train_count": 256
+          },
+          "training_data_sha256": {
+            "training-augmentation.json": "91ae329aca9c370ab4c47211790c08e0de1e016e2f77b8fba7ba4c2c295be39a",
+            "training-data.json": "68585ed7727c4ee948179a2570c781c0c6945d1ef6f02fe43cdb58a21f6ca749"
+          }
+        }
+      ],
+      "training_settings": {
+        "augment_events": 896,
+        "batch_size": 2,
+        "epochs": 2,
+        "learning_rate": 0.0001,
+        "rank": 8,
+        "seed": 20261028,
+        "train_count": 256
+      }
+    }
+  },
+  "status": "completed"
+}

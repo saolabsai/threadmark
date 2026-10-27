@@ -2,6 +2,8 @@
 
 Threadmark reduces the history a reader model must inspect for questions about changing workflow facts. It retains the original records and maintains a compact register that points back to them.
 
+The optional `state` mode returns the register's unverified predicted values directly, without reading original source content or calling another reader model. It requires explicit requested entity/field keys; it does not interpret arbitrary questions. Updater mistakes propagate to its answers. BM25 and local dense retrieval are separate comparison baselines. See [current-state lookup and retrieval](local-and-retrieval.md) for the interfaces, prompt profiles, and lifecycle accounting.
+
 The [research note](../research/threadmark.md) and [PDF](../research/threadmark.pdf) develop the mathematical design and distinguish the original latent-memory proposal from this implemented system. The [annotated bibliography](../research/references.md) identifies related papers and their relevance. This release uses explicit state and source retrieval, and does not reproduce a latent-memory architecture from a paper.
 
 ## A plain-language example

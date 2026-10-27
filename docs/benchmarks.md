@@ -1,5 +1,7 @@
 # Benchmark: evolving workflows
 
+For the completed sparse-event comparison, six-strategy register comparison, and separate trained-backbone task, read the [October 28 evaluation note](../research/evaluation-2026-10-28.md). Both newer workflow comparisons include retrieval baselines. Sparse state matched full history's 46/48 aggregate result with two regressions, two improvements, and higher lifecycle API cost. The historical result below remains unchanged and must not be pooled with those experiments.
+
 The October 27, 2026 study compared a full-history reader with a memory-guided evidence reader on 90 synthetic workflows. The result belongs to the frozen original implementation. This repository refactors that design for reuse; it does not claim a new live reproduction.
 
 ## Dataset and protocol
@@ -53,7 +55,7 @@ The study shows that a citation register can reduce the context supplied to a re
 
 No retrieval-only, keyword-search, embedding-search, or heuristic selector baseline was evaluated. The experiment therefore does not isolate the benefit of the language-model updater over simpler retrieval. The earlier trained 0.6B weekday classifier was a different, narrower experiment and is not the component evaluated here.
 
-The next useful evaluation would compare source-selection strategies on fresh instances, include more independent workflow families, and measure quality under explicit latency and cost targets. A release reproduction should freeze its model, prices, prompts, settings, data, and dependency versions before running.
+The October 28 evaluation adds source-selection strategies on new instances from these shared families. More independent workflow families and explicit production latency/cost targets remain future work. A release reproduction should freeze its model, prices, prompts, settings, data, and dependency versions before running.
 
 ## Provenance
 

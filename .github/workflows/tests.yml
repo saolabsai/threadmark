@@ -21,7 +21,7 @@ jobs:
         with:
           python-version: ${{ matrix.python }}
       - run: python -m pip install ".[dev]"
-      - run: python -m black --check src tests examples
+      - run: python -m black --check src tests examples scripts
       - run: python -m threadmark setup-tokenizer
       - run: python -m pytest -q
       - run: python -m threadmark demo

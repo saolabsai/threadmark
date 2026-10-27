@@ -1,7 +1,8 @@
 """Offline tests of state isolation, provenance and failure behavior."""
 
 from copy import deepcopy
-from dataclasses import FrozenInstanceError, replace
+from dataclasses import FrozenInstanceError, asdict, replace
+from importlib.resources import files
 from types import SimpleNamespace
 import json
 
@@ -9,7 +10,7 @@ import pytest
 
 from threadmark import Settings, Threadmark
 from threadmark.context import chunks_for
-from threadmark.prompts import READER_INSTRUCTIONS, UPDATER_INSTRUCTIONS
+from threadmark.prompts import READER_INSTRUCTIONS, UPDATER_INSTRUCTIONS, prompt_profile
 from threadmark.schema import canonical, catalog_keys, public_catalog, validate_facts
 
 CATALOG = [
@@ -125,6 +126,114 @@ def test_both_arms_have_identical_reader_instructions_and_output_cap():
     assert active["max_output_tokens"] == full["max_output_tokens"] == 256
     assert active["content"]["requested_facts"] == full["content"]["requested_facts"]
     assert full["content"]["context"] == {"events": [event()]}
+
+
+def test_bm25_archive_baseline_uses_the_same_reader_without_updater_calls():
+    provider = FakeProvider(facts(), facts())
+    memory = Threadmark.from_events(CATALOG, [event()], provider, count_tokens=len)
+    assert memory.answer(QUERY, mode="bm25") == facts()
+    assert memory.answer(QUERY, mode="full_history") == facts()
+    assert len(provider.calls) == 2
+    bm25, full = provider.calls
+    assert bm25["instructions"] == full["instructions"] == READER_INSTRUCTIONS
+    assert bm25["max_output_tokens"] == full["max_output_tokens"] == 256
+    assert bm25["content"]["context"] == {"source_events": [event()]}
+    assert memory.state == facts(None, [])
+    assert memory.snapshot()["baseline_only"] is True
+
+
+def test_bm25_ignores_predicted_state_values_and_private_query_annotations():
+    provider = FakeProvider(facts("PRIVATE_PREDICTED_VALUE"), facts())
+    memory = engine(provider)
+    memory.ingest([event()])
+    query = {
+        **QUERY,
+        "expected": "PRIVATE_GOLD_VALUE",
+        "annotation": "PRIVATE_ANNOTATION",
+    }
+    assert memory.answer(query, mode="bm25") == facts()
+    reader = provider.calls[-1]
+    assert reader["content"]["context"] == {"source_events": [event()]}
+    assert "PRIVATE_" not in json.dumps(reader)
+
+
+def test_bm25_cannot_cite_an_archive_event_outside_its_selected_packet():
+    sources = [event(f"e{index + 1}", index) for index in range(9)]
+    provider = FakeProvider(facts("Ada", ["e1"]))
+    memory = Threadmark.from_events(
+        CATALOG, sources, provider, Settings(recent_source_tokens=1), count_tokens=len
+    )
+    with pytest.raises(ValueError, match="Evidence"):
+        memory.answer(QUERY, mode="bm25")
+    supplied = provider.calls[-1]["content"]["context"]["source_events"]
+    assert [source["event_id"] for source in supplied] == [
+        f"e{index}" for index in range(2, 10)
+    ]
+
+
+def test_invalid_answer_mode_never_calls_provider():
+    provider = FakeProvider()
+    memory = engine(provider)
+    with pytest.raises(ValueError, match="mode must be"):
+        memory.answer(QUERY, mode="arbitrary-mode")
+    assert provider.calls == []
+
+
+def test_state_mode_returns_unverified_predicted_facts_without_reader_or_retrieval():
+    provider = FakeProvider(facts("UNVERIFIED_PREDICTION"))
+    memory = engine(provider)
+    memory.ingest([event()])
+
+    def forbidden_counter(_):
+        raise AssertionError("Direct state lookup must not tokenize or retrieve")
+
+    memory._count_tokens = forbidden_counter
+    result = memory.answer(QUERY, mode="state")
+    assert result == facts("UNVERIFIED_PREDICTION")
+    assert len(provider.calls) == 1  # Only the updater is charged/called.
+    result["facts"][0]["value"] = "mutated"
+    assert memory.state == facts("UNVERIFIED_PREDICTION")
+
+
+def test_state_mode_routes_only_explicit_public_requested_keys_not_freeform_text():
+    provider = FakeProvider(facts())
+    memory = engine(provider)
+    memory.ingest([event()])
+    query = {
+        "text": "A freeform question about an unrelated refund.",
+        "requested_facts": [{"entity_id": "launch", "field": "owner"}],
+        "expected": "PRIVATE_ANNOTATION",
+    }
+    assert memory.answer(query, mode="state") == facts()
+    assert len(provider.calls) == 1
+
+
+def test_state_mode_rejects_archive_only_baselines_without_implicit_ingestion():
+    provider = FakeProvider()
+    memory = Threadmark.from_events(CATALOG, [event()], provider, count_tokens=len)
+    with pytest.raises(ValueError, match="no ingested memory"):
+        memory.answer(QUERY, mode="state")
+    assert provider.calls == []
+
+
+def test_state_mode_restores_from_snapshot_without_provider_calls():
+    memory = engine(FakeProvider(facts()))
+    memory.ingest([event()])
+    provider = FakeProvider()
+    restored = Threadmark.from_snapshot(
+        memory.snapshot(), provider=provider, count_tokens=len
+    )
+    assert restored.answer(QUERY, mode="state") == facts()
+    assert provider.calls == []
+
+
+def test_state_mode_revalidates_citation_membership_against_original_archive():
+    memory = engine(FakeProvider(facts()))
+    memory.ingest([event()])
+    # Simulate accidental internal corruption after a valid ingestion.
+    memory._state["facts"][0]["evidence_event_ids"] = ["future-event"]
+    with pytest.raises(ValueError, match="Evidence"):
+        memory.answer(QUERY, mode="state")
 
 
 def test_multi_chunk_ingest_is_atomic_even_after_a_charged_call():
@@ -372,3 +481,148 @@ def test_chunking_keeps_events_whole():
         [sources[0]],
         [sources[1]],
     ]
+
+
+def test_custom_prompts_are_bound_to_instance_and_dispatch_all_reader_modes():
+    provider = FakeProvider(facts(), facts(), facts(), facts())
+    memory = Threadmark(
+        CATALOG,
+        provider,
+        count_tokens=len,
+        updater_instructions="CUSTOM UPDATER\n",
+        reader_instructions="CUSTOM READER\n",
+    )
+    memory.ingest([event()])
+    for mode in ("active_memory", "full_history", "bm25"):
+        memory.answer(QUERY, mode=mode)
+    assert provider.calls[0]["instructions"] == "CUSTOM UPDATER\n"
+    assert all(call["instructions"] == "CUSTOM READER\n" for call in provider.calls[1:])
+    assert memory.snapshot()["prompts"] == {
+        "updater": "CUSTOM UPDATER\n",
+        "reader": "CUSTOM READER\n",
+    }
+
+
+def test_default_snapshot_retains_exact_legacy_schema_and_prompts():
+    memory = engine(FakeProvider())
+    assert memory.snapshot() == {
+        "schema_version": 1,
+        "baseline_only": False,
+        "entity_catalog": CATALOG,
+        "settings": asdict(Settings()),
+        "events": [],
+        "state": facts(None, []),
+    }
+    provider = FakeProvider(facts(), facts())
+    restored = Threadmark.from_snapshot(
+        memory.snapshot(), provider=provider, count_tokens=len
+    )
+    restored.ingest([event()])
+    restored.answer(QUERY)
+    assert provider.calls[0]["instructions"] == UPDATER_INSTRUCTIONS
+    assert provider.calls[1]["instructions"] == READER_INSTRUCTIONS
+
+
+def test_custom_snapshot_round_trip_restores_prompts_for_future_updates_and_answers():
+    memory = Threadmark(
+        CATALOG,
+        FakeProvider(facts()),
+        count_tokens=len,
+        updater_instructions="Selected updater",
+        reader_instructions="Selected reader",
+    )
+    memory.ingest([event()])
+    snapshot = memory.snapshot()
+    assert snapshot["schema_version"] == 2
+    provider = FakeProvider(facts("Bo", ["e2"]), facts("Bo", ["e2"]))
+    restored = Threadmark.from_snapshot(
+        json.dumps(snapshot), provider=provider, count_tokens=len
+    )
+    assert restored.snapshot() == snapshot
+    assert provider.calls == []
+    restored.ingest([event("e2", 1, "Bo now owns the launch.")])
+    assert restored.answer(QUERY) == facts("Bo", ["e2"])
+    assert [call["instructions"] for call in provider.calls] == [
+        "Selected updater",
+        "Selected reader",
+    ]
+
+
+@pytest.mark.parametrize(
+    "damage",
+    [
+        "missing-prompts",
+        "missing-reader",
+        "extra-key",
+        "blank",
+        "oversized",
+        "nonstring",
+        "legacy-extra",
+    ],
+)
+def test_invalid_custom_snapshot_prompt_metadata_is_rejected(damage):
+    memory = Threadmark(
+        CATALOG,
+        FakeProvider(),
+        count_tokens=len,
+        updater_instructions="Selected updater",
+        reader_instructions="Selected reader",
+    )
+    snapshot = memory.snapshot()
+    if damage == "missing-prompts":
+        del snapshot["prompts"]
+    elif damage == "missing-reader":
+        del snapshot["prompts"]["reader"]
+    elif damage == "extra-key":
+        snapshot["prompts"]["hidden"] = "extra"
+    elif damage == "blank":
+        snapshot["prompts"]["reader"] = " \n"
+    elif damage == "oversized":
+        snapshot["prompts"]["updater"] = "x" * 16001
+    elif damage == "nonstring":
+        snapshot["prompts"]["updater"] = None
+    else:
+        snapshot["schema_version"] = 1
+    provider = FakeProvider()
+    with pytest.raises(ValueError):
+        Threadmark.from_snapshot(snapshot, provider=provider, count_tokens=len)
+    assert provider.calls == []
+
+
+@pytest.mark.parametrize("value", ["", " \n", None, 12, "x" * 16001])
+def test_custom_constructor_prompt_validation(value):
+    with pytest.raises(ValueError, match="nonempty string"):
+        Threadmark(
+            CATALOG, FakeProvider(), count_tokens=len, updater_instructions=value
+        )
+    with pytest.raises(ValueError, match="nonempty string"):
+        Threadmark(CATALOG, FakeProvider(), count_tokens=len, reader_instructions=value)
+
+
+def test_packaged_profile_matches_normalized_research_copy_and_is_defensive():
+    raw = json.loads(
+        files("threadmark")
+        .joinpath("data", "current-facts-v2.json")
+        .read_text(encoding="utf-8")
+    )
+    profile = prompt_profile()
+    assert profile == {key: text.strip() for key, text in raw.items()}
+    assert set(profile) == {"updater_instructions", "reader_instructions"}
+    assert profile["updater_instructions"] != UPDATER_INSTRUCTIONS
+    profile["reader_instructions"] = "mutated"
+    assert prompt_profile()["reader_instructions"] == raw["reader_instructions"].strip()
+    with pytest.raises(ValueError, match="Unknown"):
+        prompt_profile("../not-a-profile")
+
+
+def test_profile_can_be_used_with_archive_baseline_and_snapshot_restores_it():
+    provider = FakeProvider(facts())
+    memory = Threadmark.from_events(
+        CATALOG, [event()], provider, count_tokens=len, **prompt_profile()
+    )
+    assert memory.snapshot()["schema_version"] == 2
+    restored = Threadmark.from_snapshot(
+        memory.snapshot(), provider=provider, count_tokens=len
+    )
+    restored.answer(QUERY, mode="full_history")
+    assert provider.calls[0]["instructions"] == prompt_profile()["reader_instructions"]
