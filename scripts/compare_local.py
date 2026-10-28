@@ -12,6 +12,7 @@ import argparse
 from dataclasses import asdict
 from datetime import datetime, timezone
 import hashlib
+import importlib
 import importlib.metadata
 import json
 import os
@@ -103,6 +104,45 @@ def digest(path: Path) -> str:
         for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
             value.update(chunk)
     return value.hexdigest()
+
+
+def runtime_source_paths(*, include_delta: bool = False) -> dict[str, Path]:
+    """Map portable evidence names to the package files actually imported.
+
+    A non-editable installation can execute package modules from site-packages
+    while this script lives in a separate checkout. Hashing and snapshotting
+    must use the same loaded files, rather than substitute checkout copies.
+    """
+    names = (
+        "datasets",
+        "local_provider",
+        "retrieval",
+        "dense_retrieval",
+        "prompts",
+        "engine",
+        "context",
+        "schema",
+        "providers",
+        "budget",
+        "_ledger",
+        "evaluation",
+        "config",
+        "routed_provider",
+    )
+    if include_delta:
+        names += ("delta_memory",)
+    modules = {"src/threadmark/__init__.py": importlib.import_module("threadmark")}
+    modules.update(
+        (f"src/threadmark/{name}.py", importlib.import_module(f"threadmark.{name}"))
+        for name in names
+    )
+    sources = {"scripts/compare_local.py": Path(__file__).resolve()}
+    for logical, module in modules.items():
+        filename = getattr(module, "__file__", None)
+        if not filename or Path(filename).suffix != ".py":
+            raise ValueError(f"Loaded Python source is unavailable for {logical}")
+        sources[logical] = Path(filename).resolve()
+    return sources
 
 
 def write(path: Path, data: dict) -> None:
@@ -500,10 +540,7 @@ def main():
         reader_max_output_tokens=args.reader_output_tokens,
         recent_source_tokens=1024,
     )
-    import threadmark.datasets as generator
-    import threadmark.local_provider as local_module
-    import threadmark.retrieval as retrieval_module
-    import threadmark.dense_retrieval as dense_module
+    source_paths = runtime_source_paths(include_delta=args.strategy == "event_delta")
 
     protocol = {
         "schema": "threadmark-local-comparison-v1",
@@ -521,31 +558,7 @@ def main():
         "update_strategy": args.strategy,
         "arm_order": "Rotate by question and workflow index",
         "selection_basis": "Configuration selected from preserved development runs; an event-delta follow-up may also use prior register-run diagnostics. This test's fresh seed is not used for tuning.",
-        "sources": {
-            str(path.relative_to(ROOT)).replace("\\", "/"): digest(path)
-            for path in [
-                Path(__file__).resolve(),
-                Path(generator.__file__),
-                Path(local_module.__file__),
-                Path(retrieval_module.__file__),
-                Path(dense_module.__file__),
-                ROOT / "src/threadmark/prompts.py",
-                ROOT / "src/threadmark/engine.py",
-                ROOT / "src/threadmark/context.py",
-                ROOT / "src/threadmark/schema.py",
-                ROOT / "src/threadmark/providers.py",
-                ROOT / "src/threadmark/budget.py",
-                ROOT / "src/threadmark/_ledger.py",
-                ROOT / "src/threadmark/evaluation.py",
-                ROOT / "src/threadmark/config.py",
-                ROOT / "src/threadmark/routed_provider.py",
-            ]
-            + (
-                [ROOT / "src/threadmark/delta_memory.py"]
-                if args.strategy == "event_delta"
-                else []
-            )
-        },
+        "sources": {logical: digest(path) for logical, path in source_paths.items()},
         "base_config_sha256": digest(args.base / "config.json") if args.base else None,
         "base_asset_sha256": {
             path.name: digest(path)
@@ -590,10 +603,12 @@ def main():
     write(args.output / "protocol.json", protocol)
     import shutil
 
-    for relative in protocol["sources"]:
-        destination = args.output / "source" / relative
+    for logical, actual_source in source_paths.items():
+        destination = args.output / "source" / logical
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(ROOT / relative, destination)
+        shutil.copyfile(actual_source, destination)
+        if digest(destination) != protocol["sources"][logical]:
+            raise ValueError("Runtime source changed while preserving its snapshot")
     protocol_sha = digest(args.output / "protocol.json")
     if args.dataset:
         from threadmark.evaluation import load_dataset

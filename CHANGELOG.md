@@ -7,6 +7,7 @@
 - Added a six-arm comparison driver that freezes protocols before fresh test generation and preserves public request/response journals and source snapshots.
 - Added experimental sparse-event extraction with a deterministic chronological reducer, explicit clears, automatic event citations, and atomic ingestion.
 - Preserved separate register, sparse-event, and matched-backbone experiments with independently audited results, negative trials, exact source snapshots, and documented limits.
+- Made comparison source snapshots work with ordinary package installations as well as editable checkouts, using the loaded files for both hashes and copies.
 
 - Added a repository research note, downloadable PDF, mathematical design, and annotated bibliography that distinguish the original latent-memory proposal from the implemented explicit register and evidence retrieval.
 - Replaced external hosted-page links with repository documentation and the preserved redacted evidence archive. Included research and benchmark evidence in the source distribution.

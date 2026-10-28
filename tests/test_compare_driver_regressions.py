@@ -1,6 +1,8 @@
 """Offline CLI regressions: unused ingestion and unsupported writer settings."""
 
 from copy import deepcopy
+import hashlib
+import importlib
 import importlib.util
 import json
 from pathlib import Path
@@ -119,7 +121,7 @@ def fixture_run(tmp_path, monkeypatch, driver):
     )
     output = tmp_path / "output"
 
-    def execute(*arms):
+    def execute(*arms, strategy="register"):
         monkeypatch.setattr(
             sys,
             "argv",
@@ -135,6 +137,8 @@ def fixture_run(tmp_path, monkeypatch, driver):
                 str(data),
                 "--split",
                 "dev",
+                "--strategy",
+                strategy,
                 "--arms",
                 *arms,
             ],
@@ -182,6 +186,64 @@ def test_state_mode_still_ingests_once_and_needs_no_reader_call(fixture_run):
     assert state["score"]["exact_values"] is True
     assert state["reader_calls"] == 0
     assert report["summary"]["arms"]["state"]["lifecycle_input_tokens"] == 10
+
+
+@pytest.mark.parametrize("strategy", ["register", "event_delta"])
+def test_source_snapshots_use_loaded_package_outside_checkout(
+    fixture_run, tmp_path, monkeypatch, strategy
+):
+    """Installed files can differ from checkout files; preserve the executed origin."""
+    driver = fixture_run.driver
+    installed = tmp_path / "site-packages" / "threadmark"
+    installed.mkdir(parents=True)
+    expected = {}
+    sources = driver.runtime_source_paths(include_delta=strategy == "event_delta")
+    for logical, actual_source in sources.items():
+        if not logical.startswith("src/threadmark/"):
+            continue
+        filename = Path(logical).name
+        module_name = (
+            "threadmark"
+            if filename == "__init__.py"
+            else f"threadmark.{Path(filename).stem}"
+        )
+        module = importlib.import_module(module_name)
+        content = (
+            actual_source.read_bytes()
+            + b"\n# installed distribution differs from checkout\n"
+        )
+        path = installed / filename
+        path.write_bytes(content)
+        assert content != (ROOT / logical).read_bytes()
+        monkeypatch.setattr(module, "__file__", str(path))
+        expected[logical] = content
+
+    actual_paths = driver.runtime_source_paths(include_delta=strategy == "event_delta")
+    assert all(actual_paths[logical].parent == installed for logical in expected)
+    fixture_run.execute("full_history", strategy=strategy)
+    protocol = json.loads(
+        (fixture_run.output / "protocol.json").read_text(encoding="utf-8")
+    )
+    assert set(protocol["sources"]) == {"scripts/compare_local.py", *expected}
+    assert ("src/threadmark/delta_memory.py" in protocol["sources"]) == (
+        strategy == "event_delta"
+    )
+    for logical, content in expected.items():
+        snapshot = fixture_run.output / "source" / logical
+        assert snapshot.read_bytes() == content
+        assert protocol["sources"][logical] == hashlib.sha256(content).hexdigest()
+        assert (
+            protocol["sources"][logical]
+            != hashlib.sha256((ROOT / logical).read_bytes()).hexdigest()
+        )
+    script = Path(driver.__file__).read_bytes()
+    assert (
+        protocol["sources"]["scripts/compare_local.py"]
+        == hashlib.sha256(script).hexdigest()
+    )
+    assert (
+        fixture_run.output / "source/scripts/compare_local.py"
+    ).read_bytes() == script
 
 
 @pytest.mark.parametrize("effort", ["none", "low", "medium"])
