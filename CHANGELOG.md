@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Added `WorkflowMemory` for historical facts, explicit proposal acceptance/rejection, uniquely resolved external proposal labels, and source-linked reasons.
+- Added free-form answers from bounded structured memory and portable snapshots restored by validated operation replay without model calls.
+- Added an offline workflow-memory example, integration guide, and separately reported November 1 long-context studies with sanitized answer-level evidence and full cost limitations.
 - Added optional local Hugging Face generation, BM25 and MiniLM retrieval baselines, and direct predicted-state lookup without a query-time reader call.
 - Added explicit v2 prompt profiles, custom-prompt snapshots with backward-compatible restoration, role-specific providers, and paired project/run spending limits.
 - Added a six-arm comparison driver that freezes protocols before fresh test generation and preserves public request/response journals and source snapshots.

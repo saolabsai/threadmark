@@ -1,5 +1,22 @@
 # Benchmark artifacts
 
+## November 1 long-context evaluations
+
+The [long-context summary](long-context-2026-11-01.json) and
+[sanitized answer-level evidence](long-context-2026-11-01-evidence.zip) preserve
+two separate studies: 54 questions per method over nine 8K–64K histories, followed
+by 18 questions per method over three fresh 32K–96K histories after a proposal-ID
+fix. Read the [methodology, costs, development history and limitations](../research/evaluation-2026-11-01.md).
+
+Improved workflow memory scored 52/54 supported answers in the initial primary
+grading (53/54 in secondary blinded AI review), then 18/18 in the targeted
+follow-up. These scores are not pooled. Hybrid RAG also answered all 18 follow-up
+questions correctly and was substantially cheaper. The public `WorkflowMemory`
+packaging adds persistence and a reader wrapper, checked offline rather than
+rerun in a new paid benchmark. The archive excludes credentials, private ledgers,
+provider identifiers and local machine paths; its manifest distinguishes
+canonical source hashes from sanitized export hashes.
+
 ## October 28 evaluations
 
 Read the [dated methodology and interpretation note](../research/evaluation-2026-10-28.md). These results are separate experiments and should not be pooled:

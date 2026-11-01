@@ -2,19 +2,23 @@
 
 **Experimental working memory for evolving workflows, by [SaoLabs AI](https://github.com/saolabsai).**
 
-Threadmark keeps a small register of current facts as a workflow changes. Its evidence-reader mode uses that register to select original records for a language model. Its direct-state mode returns predicted facts at explicitly supplied entity/field keys, without query-time retrieval of source content or another model call. The original archive is retained, and predictions can be wrong.
+Threadmark keeps source-linked memory as a workflow changes. `WorkflowMemory` preserves current facts, earlier values, pending and resolved proposals, and recorded reasons. It can answer free-form questions from that structured memory and save or restore its history without another model call. The original archive is retained, and predictions can be wrong.
 
-For example, a project may change owner, deadline, and approval status several times. The sparse-event strategy extracts explicit changes and lets chronological code preserve untouched facts. The register strategy asks an updater to rewrite the current facts. These are separate experimental methods with separate measurements.
+For example, a project may change owner, deadline, and approval status several times. A proposed change stays pending until an acceptance resolves it; its approved value cites both the proposal and the acceptance. Earlier values remain available for historical questions. Explicit external proposal labels are matched only when they uniquely identify an open proposal for the same entity and field.
+
+The existing `Threadmark` API remains available for its current-fact register and original-evidence reader. `EventDeltaMemory` extracts sparse assignments for direct current-state lookup. These are separate methods with separate measurements. See [workflow memory](docs/workflow-memory.md) for the new history and decision API, its limits, and an offline example.
 
 This is a Python library and comparison harness. Its workflow memory methods use fixed provider weights. A separate research component trains LoRA event classifiers on Qwen and SmolLM2; that narrow component does not establish a new foundation model, a learned decoder memory layer, or general replacement of retrieval-augmented generation.
 
 ## Research and mathematical design
 
+Read the [November 1 long-conversation evaluation](research/evaluation-2026-11-01.md) for the history and proposal improvements, the separate 54-question study and 18-question follow-up, costs, and limitations. The packaged API adds persistence and validation around the tested algorithm; it has not undergone another paid model evaluation.
+
 Read the [October 28 evaluation note](research/evaluation-2026-10-28.md) for the sparse-event and register/retrieval comparisons, plus the separate trained-backbone test. SmolLM2 and Qwen each reached 160/160 on their matched, narrow weekday-state task; this does not measure broader SmolLM2 reader accuracy.
 
 Read the [Threadmark research note](research/threadmark.md) or [download the paper as a PDF](research/threadmark.pdf). The note explains the original active-model idea, the implemented update and evidence-selection equations, lifecycle cost, and the experiment's limits. The [annotated research references](research/references.md) and [BibTeX bibliography](research/references.bib) link to the source papers.
 
-Related work informed the original proposal for a learned latent memory layer. This release implements an explicit fact register and retrieval of original evidence; it is not a reproduction of those papers or an implementation of the proposed latent layer. Its equations describe this implementation and the hypotheses still to test.
+Related work informed the original proposal for a learned latent memory layer. This library implements explicit structured memory and, in its evidence-reader path, retrieval of original records. It is not a reproduction of those papers or an implementation of the proposed latent layer. Its equations describe this implementation and the hypotheses still to test.
 
 ## Try it locally
 
@@ -42,17 +46,37 @@ Then install and run:
 
 ```bash
 python -m pip install -e .
+python examples/use_workflow_memory.py
 python -m threadmark demo
 python -m threadmark setup-tokenizer
 python -m threadmark inspect --input examples/workflow.json
 python -m threadmark compare --input examples/workflow.json --output runs/prepared --prepare-only
 ```
 
-The demo uses recorded responses and a conservative byte counter to demonstrate the data flow. It is not a fresh model evaluation. `setup-tokenizer` downloads official tokenizer data once; it does not make a paid API call. Subsequent inspection and preparation run offline. Preparation validates the fixture and writes a request plan without calling OpenAI. See [usage](docs/usage.md) for a paid comparison, the Python API, input format, and output files.
+The workflow-memory example and demo use recorded responses and a conservative byte counter to demonstrate the data flow. They are not fresh model evaluations. The example includes an external proposal label, its acceptance, an owner handoff, a free-form answer, and snapshot restoration. `setup-tokenizer` downloads official tokenizer data once; it does not make a paid API call. Subsequent inspection and preparation run offline. Preparation validates the fixture and writes a request plan without calling OpenAI. See [workflow-memory usage](docs/workflow-memory.md) for the new API, and [usage](docs/usage.md) for the existing CLI, paid comparison, input format, and output files.
 
-## Latest: sparse-event current-state comparison
+## Latest: long-conversation memory improvement
 
-On 12 fresh synthetic workflows with histories in the 8,192/16,384-token bands, the latest test asked 48 questions per method:
+The November 1 follow-up used **three fresh synthetic histories** in the 32K, 64K and 96K bands, with six questions per history. All methods used the same Luna reader. The largest full-history request had **99,495 input tokens**.
+
+| Method | Correct answers | Correct and source-supported | Known lifecycle API cost |
+| --- | ---: | ---: | ---: |
+| Full history | 18/18 | 17/18 | $0.30167155 |
+| Hybrid RAG | 18/18 | 17/18 | $0.00867095 |
+| Current-state memory | 9/18 | 9/18 | $0.07599370 |
+| Threadmark history and decisions | 18/18 | 18/18 | $0.11125990 |
+
+The independent blinded AI review agreed with all 72 correctness and supported-correct decisions. The full-history and RAG support failures were missing a proposal citation for the same otherwise correct answer; RAG retrieved that source. This is not evidence of a retrieval failure.
+
+Threadmark used **91.6% fewer reader input tokens than full history**. Including ingestion, its API estimate was **63.1% lower than full history and 12.8 times hybrid RAG's cost**. Building its memories took approximately **193 seconds**; the lower average answer time does not establish an overall speed advantage. Per-method costs include memory building and answering, exclude evaluation judging, and do not price local retrieval compute.
+
+An earlier, separately frozen 54-question study scored 52/54 supported answers for the history method versus 27/54 for current-state memory, 53/54 for full history and 54/54 for hybrid RAG. Secondary blinded AI review found one grader false negative, giving the history method 53/54; the primary score remains unchanged. A proposal-label failure from that study motivated the separately frozen follow-up. **The two studies are not pooled.**
+
+These are small synthetic tests with two entities and 12 current fields per history. Most added length is background conversation, and domain and length are confounded in the follow-up. The results do not establish production readiness, population-level accuracy, or a general RAG replacement. Read the [evaluation and limitations](research/evaluation-2026-11-01.md) and [result summary](benchmarks/long-context-2026-11-01.json).
+
+## Historical October 28 current-state comparison
+
+On 12 fresh synthetic workflows with histories in the 8,192/16,384-token bands, the October 28 test asked 48 questions per method:
 
 | Method | Exact values | Exact values and evidence | Known lifecycle API cost |
 | --- | ---: | ---: | ---: |

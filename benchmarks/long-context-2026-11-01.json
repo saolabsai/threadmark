@@ -1,0 +1,1347 @@
+{
+  "schema": "threadmark-long-context-summary",
+  "date": "2026-11-01",
+  "studies_are_separate": true,
+  "synthetic": true,
+  "studies": [
+    {
+      "study": "initial-long-context-study",
+      "cases": 9,
+      "questions_per_method": 54,
+      "size_bands": [
+        8192,
+        32768,
+        65536
+      ],
+      "model": "gpt-5.6-luna",
+      "primary": {
+        "full_history": {
+          "planned": 54,
+          "available": 54,
+          "judged": 54,
+          "correct": 53,
+          "supported_correct": 53,
+          "known_lifecycle_api_cost_usd": 0.4914054499999999,
+          "query_wall_seconds": 148.73152979996667,
+          "ingest_wall_seconds": 0,
+          "reader_input_tokens": 1945931,
+          "updater_input_tokens": 0,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 8,
+              "supported_correct": 8
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 17,
+              "supported_correct": 17
+            }
+          }
+        },
+        "hybrid_rag": {
+          "planned": 54,
+          "available": 54,
+          "judged": 54,
+          "correct": 54,
+          "supported_correct": 54,
+          "known_lifecycle_api_cost_usd": 0.024658600000000003,
+          "query_wall_seconds": 170.01044329998695,
+          "ingest_wall_seconds": 0,
+          "reader_input_tokens": 78502,
+          "updater_input_tokens": 0,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            }
+          }
+        },
+        "current_state_memory": {
+          "planned": 54,
+          "available": 54,
+          "judged": 54,
+          "correct": 27,
+          "supported_correct": 27,
+          "known_lifecycle_api_cost_usd": 0.13340075,
+          "query_wall_seconds": 134.19497810001485,
+          "ingest_wall_seconds": 319.7608859999964,
+          "reader_input_tokens": 57989,
+          "updater_input_tokens": 396270,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 0,
+              "supported_correct": 0
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 0,
+              "supported_correct": 0
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 0,
+              "supported_correct": 0
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 9,
+              "supported_correct": 9
+            }
+          }
+        },
+        "versioned_memory": {
+          "planned": 54,
+          "available": 54,
+          "judged": 54,
+          "correct": 52,
+          "supported_correct": 52,
+          "known_lifecycle_api_cost_usd": 0.21855569999999988,
+          "query_wall_seconds": 136.4447938000376,
+          "ingest_wall_seconds": 435.4563530000014,
+          "reader_input_tokens": 273929,
+          "updater_input_tokens": 458617,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 8,
+              "supported_correct": 8
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 8,
+              "supported_correct": 8
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 18,
+              "supported_correct": 18
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 16,
+              "supported_correct": 16
+            }
+          }
+        }
+      },
+      "secondary_blind_ai_review": {
+        "full_history": {
+          "correct": 53,
+          "supported": 53,
+          "supported_correct": 53,
+          "planned": 54,
+          "citation_membership_valid": 54,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 8,
+              "supported": 8,
+              "supported_correct": 8
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 17,
+              "supported": 17,
+              "supported_correct": 17
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "project": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "support": {
+              "planned": 18,
+              "correct": 17,
+              "supported": 17,
+              "supported_correct": 17
+            }
+          }
+        },
+        "hybrid_rag": {
+          "correct": 54,
+          "supported": 54,
+          "supported_correct": 54,
+          "planned": 54,
+          "citation_membership_valid": 54,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "project": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "support": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            }
+          }
+        },
+        "current_state_memory": {
+          "correct": 27,
+          "supported": 27,
+          "supported_correct": 27,
+          "planned": 54,
+          "citation_membership_valid": 54,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 0,
+              "supported": 0,
+              "supported_correct": 0
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 0,
+              "supported": 0,
+              "supported_correct": 0
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 0,
+              "supported": 0,
+              "supported_correct": 0
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 18,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "project": {
+              "planned": 18,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "support": {
+              "planned": 18,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            }
+          }
+        },
+        "versioned_memory": {
+          "correct": 53,
+          "supported": 53,
+          "supported_correct": 53,
+          "planned": 54,
+          "citation_membership_valid": 54,
+          "category": {
+            "correction": {
+              "planned": 9,
+              "correct": 8,
+              "supported": 8,
+              "supported_correct": 8
+            },
+            "current": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "historical": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "reasoning": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "summary": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            },
+            "unanswerable": {
+              "planned": 9,
+              "correct": 9,
+              "supported": 9,
+              "supported_correct": 9
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "65536": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "8192": {
+              "planned": 18,
+              "correct": 17,
+              "supported": 17,
+              "supported_correct": 17
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            },
+            "project": {
+              "planned": 18,
+              "correct": 17,
+              "supported": 17,
+              "supported_correct": 17
+            },
+            "support": {
+              "planned": 18,
+              "correct": 18,
+              "supported": 18,
+              "supported_correct": 18
+            }
+          }
+        }
+      },
+      "stored_state": {
+        "current_state_memory": {
+          "planned_fields": 108,
+          "available_fields": 108,
+          "exact_values": 99,
+          "exact_latest_direct_citation_sets": 97,
+          "exact_values_and_citations": 97,
+          "registers": 9,
+          "exact_value_registers": 0,
+          "exact_value_and_citation_registers": 0,
+          "size_band": {
+            "8192": {
+              "planned_fields": 36,
+              "exact_values": 33,
+              "exact_values_and_citations": 33
+            },
+            "32768": {
+              "planned_fields": 36,
+              "exact_values": 33,
+              "exact_values_and_citations": 32
+            },
+            "65536": {
+              "planned_fields": 36,
+              "exact_values": 33,
+              "exact_values_and_citations": 32
+            }
+          }
+        },
+        "versioned_memory": {
+          "planned_fields": 108,
+          "available_fields": 108,
+          "exact_values": 107,
+          "exact_latest_direct_citation_sets": 99,
+          "exact_values_and_citations": 99,
+          "registers": 9,
+          "exact_value_registers": 8,
+          "exact_value_and_citation_registers": 1,
+          "size_band": {
+            "8192": {
+              "planned_fields": 36,
+              "exact_values": 35,
+              "exact_values_and_citations": 32
+            },
+            "32768": {
+              "planned_fields": 36,
+              "exact_values": 36,
+              "exact_values_and_citations": 34
+            },
+            "65536": {
+              "planned_fields": 36,
+              "exact_values": 36,
+              "exact_values_and_citations": 33
+            }
+          }
+        }
+      },
+      "known_api_cost_usd_including_judging": 0.8920785500000001,
+      "dataset_sha256": "6fb5bf4af4a9ce46d91fc04dfa7708d0a5b63bc3efa570e255f6388687e92f3f",
+      "method_lock_sha256": "d90fc2a564929925788c677aa0c6dc7242cb13f2f1bf07494162704b4fce72cf",
+      "audit_passed": true
+    },
+    {
+      "study": "proposal-alias-followup",
+      "cases": 3,
+      "questions_per_method": 18,
+      "size_bands": [
+        32768,
+        65536,
+        98304
+      ],
+      "model": "gpt-5.6-luna",
+      "primary": {
+        "full_history": {
+          "planned": 18,
+          "available": 18,
+          "judged": 18,
+          "correct": 18,
+          "supported_correct": 17,
+          "known_lifecycle_api_cost_usd": 0.30167155,
+          "query_wall_seconds": 56.05673679999745,
+          "ingest_wall_seconds": 0,
+          "reader_input_tokens": 1198897,
+          "updater_input_tokens": 0,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 2
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 5
+            }
+          }
+        },
+        "hybrid_rag": {
+          "planned": 18,
+          "available": 18,
+          "judged": 18,
+          "correct": 18,
+          "supported_correct": 17,
+          "known_lifecycle_api_cost_usd": 0.00867095,
+          "query_wall_seconds": 65.5059469000189,
+          "ingest_wall_seconds": 0,
+          "reader_input_tokens": 27557,
+          "updater_input_tokens": 0,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 2
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 5
+            }
+          }
+        },
+        "current_state_memory": {
+          "planned": 18,
+          "available": 18,
+          "judged": 18,
+          "correct": 9,
+          "supported_correct": 9,
+          "known_lifecycle_api_cost_usd": 0.07599370000000003,
+          "query_wall_seconds": 46.74679309999192,
+          "ingest_wall_seconds": 185.91715000000113,
+          "reader_input_tokens": 19831,
+          "updater_input_tokens": 245211,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 0,
+              "supported_correct": 0
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 0,
+              "supported_correct": 0
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 0,
+              "supported_correct": 0
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 3,
+              "supported_correct": 3
+            }
+          }
+        },
+        "versioned_memory": {
+          "planned": 18,
+          "available": 18,
+          "judged": 18,
+          "correct": 18,
+          "supported_correct": 18,
+          "known_lifecycle_api_cost_usd": 0.11125989999999998,
+          "query_wall_seconds": 47.24098780001805,
+          "ingest_wall_seconds": 193.115907899999,
+          "reader_input_tokens": 100405,
+          "updater_input_tokens": 289521,
+          "unknown_usage_calls": 0,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 6,
+              "supported_correct": 6
+            }
+          }
+        }
+      },
+      "secondary_blind_ai_review": {
+        "full_history": {
+          "correct": 18,
+          "supported": 17,
+          "supported_correct": 17,
+          "planned": 18,
+          "citation_membership_valid": 18,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 2,
+              "supported_correct": 2
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 5,
+              "supported_correct": 5
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 5,
+              "supported_correct": 5
+            },
+            "project": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "support": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            }
+          }
+        },
+        "hybrid_rag": {
+          "correct": 18,
+          "supported": 17,
+          "supported_correct": 17,
+          "planned": 18,
+          "citation_membership_valid": 18,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 2,
+              "supported_correct": 2
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 5,
+              "supported_correct": 5
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 5,
+              "supported_correct": 5
+            },
+            "project": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "support": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            }
+          }
+        },
+        "current_state_memory": {
+          "correct": 9,
+          "supported": 9,
+          "supported_correct": 9,
+          "planned": 18,
+          "citation_membership_valid": 18,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 0,
+              "supported": 0,
+              "supported_correct": 0
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 0,
+              "supported": 0,
+              "supported_correct": 0
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 0,
+              "supported": 0,
+              "supported_correct": 0
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 6,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "project": {
+              "planned": 6,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "support": {
+              "planned": 6,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            }
+          }
+        },
+        "versioned_memory": {
+          "correct": 18,
+          "supported": 18,
+          "supported_correct": 18,
+          "planned": 18,
+          "citation_membership_valid": 18,
+          "category": {
+            "correction": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "current": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "historical": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "reasoning": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "summary": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            },
+            "unanswerable": {
+              "planned": 3,
+              "correct": 3,
+              "supported": 3,
+              "supported_correct": 3
+            }
+          },
+          "size_band": {
+            "32768": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "65536": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "98304": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            }
+          },
+          "domain": {
+            "meeting": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "project": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            },
+            "support": {
+              "planned": 6,
+              "correct": 6,
+              "supported": 6,
+              "supported_correct": 6
+            }
+          }
+        }
+      },
+      "stored_state": {
+        "current_state_memory": {
+          "planned_fields": 36,
+          "available_fields": 36,
+          "exact_values": 33,
+          "exact_latest_direct_citation_sets": 32,
+          "exact_values_and_citations": 32,
+          "registers": 3,
+          "exact_value_registers": 0,
+          "exact_value_and_citation_registers": 0,
+          "size_band": {
+            "32768": {
+              "planned_fields": 12,
+              "exact_values": 11,
+              "exact_values_and_citations": 10
+            },
+            "65536": {
+              "planned_fields": 12,
+              "exact_values": 11,
+              "exact_values_and_citations": 11
+            },
+            "98304": {
+              "planned_fields": 12,
+              "exact_values": 11,
+              "exact_values_and_citations": 11
+            }
+          }
+        },
+        "versioned_memory": {
+          "planned_fields": 36,
+          "available_fields": 36,
+          "exact_values": 36,
+          "exact_latest_direct_citation_sets": 33,
+          "exact_values_and_citations": 33,
+          "registers": 3,
+          "exact_value_registers": 3,
+          "exact_value_and_citation_registers": 0,
+          "size_band": {
+            "32768": {
+              "planned_fields": 12,
+              "exact_values": 12,
+              "exact_values_and_citations": 11
+            },
+            "65536": {
+              "planned_fields": 12,
+              "exact_values": 12,
+              "exact_values_and_citations": 11
+            },
+            "98304": {
+              "planned_fields": 12,
+              "exact_values": 12,
+              "exact_values_and_citations": 11
+            }
+          }
+        }
+      },
+      "known_api_cost_usd_including_judging": 0.5054680000000003,
+      "dataset_sha256": "5f5d5d30a0989fdc9d10f4cabc6cd9520762b7dc796271de1f197dff74bebeb9",
+      "method_lock_sha256": "37d2561052305f4587bbe43117276164603bcf49ced3bf1c4322aa902771877d",
+      "audit_passed": true
+    }
+  ],
+  "release_relationship": "Frozen experiments preceded the maintained WorkflowMemory packaging. The published API adds snapshots and a reader wrapper; those additions were checked offline and have not been rerun in a paid study.",
+  "limitations": [
+    "AI grading, not human validation",
+    "Fixed small operative state; most added context is background",
+    "Followup domain and size are confounded",
+    "No general RAG-replacement or cost advantage over hybrid RAG established",
+    "API estimates exclude local retrieval compute and model setup"
+  ],
+  "evidence_archive": {
+    "file": "long-context-2026-11-01-evidence.zip",
+    "sha256": "27843c6a46d38ec3d4654faa2e7519f3733e505cc22cf985ff52e946176f5a88",
+    "bytes": 352254
+  }
+}
