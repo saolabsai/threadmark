@@ -3,6 +3,8 @@ include scripts/build_research_pdf.py
 include scripts/compare_local.py
 include scripts/download_models.py
 include scripts/prepare_comparison_evidence.py
+include scripts/evaluate_workflow_integrity.py
+include scripts/evaluate_active_context.py
 recursive-include docs *.md
 recursive-include examples *.py *.json
 recursive-include benchmarks *.md *.json *.zip

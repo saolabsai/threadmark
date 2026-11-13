@@ -1,12 +1,15 @@
 """Role routing preserves requests, accounting, and failures without retries."""
 
 from copy import deepcopy
+from hashlib import sha256
+import json
 
 import pytest
 
 from threadmark.prompts import READER_INSTRUCTIONS, UPDATER_INSTRUCTIONS
 from threadmark.providers import Completion, ProviderError
 from threadmark.routed_provider import RoleRoutedProvider
+from threadmark.schema import canonical
 
 
 class Provider:
@@ -230,3 +233,151 @@ def test_same_provider_object_is_rejected():
 def test_invalid_updater_instruction_sets_are_rejected(instructions):
     with pytest.raises(ValueError, match="nonempty set"):
         RoleRoutedProvider(Provider("reader"), Provider("writer"), instructions)
+
+
+def adapter_identity():
+    config_hash, weights_hash = "1" * 64, "2" * 64
+    return {
+        "adapter_id": "sha256:"
+        + sha256(
+            canonical({"config": config_hash, "weights": weights_hash}).encode("utf-8")
+        ).hexdigest(),
+        "config_sha256": config_hash,
+        "weights_sha256": weights_hash,
+        "base_config_sha256": "3" * 64,
+        "base_model_type": "llama",
+        "compatibility": "exact_lora_target_shapes; training_base_revision_unverified",
+    }
+
+
+class MetadataProvider(Provider):
+    def __init__(self, metadata):
+        super().__init__("local-updater")
+        self.metadata = metadata
+
+    def complete(self, **kwargs):
+        result = super().complete(**kwargs)
+        self._calls[-1].update(self.metadata)
+        return result
+
+    def load(self):
+        return {"device": "cpu", **self.metadata}
+
+
+def test_routed_adapter_and_structured_metadata_are_validated_and_defensive():
+    identity = adapter_identity()
+    native = MetadataProvider(
+        {
+            "adapter": identity,
+            "adapter_requested": True,
+            "structured_workflow": True,
+            "workflow_schema_sha256": "4" * 64,
+            "constraint_engine": "lm-format-enforcer/0.11.3",
+            "constraint_setup_seconds": 0.025,
+            "max_workflow_value_chars": 256,
+        }
+    )
+    provider = router(updater=native)
+    call(provider, UPDATER_INSTRUCTIONS)
+    record = provider.calls[0]
+    for key, value in native.metadata.items():
+        assert record[key] == value
+    identity["weights_sha256"] = "changed"
+    provider.calls[0]["adapter"]["config_sha256"] = "changed"
+    assert provider.calls[0]["adapter"]["weights_sha256"] == "2" * 64
+    assert provider.calls[0]["adapter"]["config_sha256"] == "1" * 64
+
+
+def test_routed_plain_metadata_preserves_explicit_nulls_and_false_flags():
+    metadata = {
+        "adapter": None,
+        "adapter_requested": False,
+        "structured_workflow": False,
+        "workflow_schema_sha256": None,
+        "constraint_engine": None,
+        "constraint_setup_seconds": None,
+    }
+    provider = router(updater=MetadataProvider(metadata))
+    call(provider, UPDATER_INSTRUCTIONS)
+    assert {key: provider.calls[0][key] for key in metadata} == metadata
+
+
+def test_unknown_nested_adapter_diagnostics_never_enter_routed_logs_or_load_metadata():
+    identity = {
+        **adapter_identity(),
+        "path": "PRIVATE_LOCAL_PATH",
+        "prompt": {"nested": "PRIVATE_WORKFLOW_TEXT"},
+    }
+    native = MetadataProvider({"adapter": identity, "structured_workflow": True})
+    provider = router(reader=native)
+    call(provider, READER_INSTRUCTIONS)
+    loaded = provider.load()
+    assert provider.calls[0]["adapter"] == loaded["adapter"] == adapter_identity()
+    assert "PRIVATE" not in json.dumps(provider.calls)
+    assert "PRIVATE" not in json.dumps(loaded)
+    loaded["adapter"]["weights_sha256"] = "changed"
+    assert provider.load()["adapter"]["weights_sha256"] == "2" * 64
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("adapter_id", "sha256:PRIVATE"),
+        ("adapter_id", "sha256:" + "9" * 64),  # Inconsistent identity.
+        ("config_sha256", {"private": "PRIVATE_PAYLOAD"}),
+        ("weights_sha256", "PRIVATE_PAYLOAD"),
+        ("base_config_sha256", ["PRIVATE_PAYLOAD"]),
+        ("base_model_type", "PRIVATE_MODEL_TYPE"),
+        ("base_model_type", {"private": "PRIVATE_PAYLOAD"}),
+        ("compatibility", "PRIVATE_PAYLOAD"),
+    ],
+)
+def test_invalid_adapter_identity_is_omitted_without_leaking_or_becoming_base_only(
+    field, value
+):
+    identity = {**adapter_identity(), field: value}
+    native = MetadataProvider({"adapter": identity, "adapter_requested": True})
+    provider = router(reader=native)
+    call(provider, READER_INSTRUCTIONS)
+    assert "adapter" not in provider.calls[0]
+    assert provider.calls[0]["adapter_requested"] is True
+    assert "adapter" not in provider.load()
+    assert "PRIVATE" not in json.dumps(provider.calls)
+    assert "PRIVATE" not in json.dumps(provider.load())
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
+        ("adapter", {"prompt": "PRIVATE_PAYLOAD"}),
+        ("adapter", "PRIVATE_PAYLOAD"),
+        ("adapter_requested", "PRIVATE_PAYLOAD"),
+        ("adapter_requested", 1),
+        ("structured_workflow", {"private": "PRIVATE_PAYLOAD"}),
+        ("structured_workflow", 0),
+        ("workflow_schema_sha256", ["PRIVATE_PAYLOAD"]),
+        ("workflow_schema_sha256", "PRIVATE_PAYLOAD"),
+        ("constraint_engine", {"private": "PRIVATE_PAYLOAD"}),
+        ("constraint_engine", "lm-format-enforcer/PRIVATE_PAYLOAD"),
+        ("constraint_setup_seconds", "PRIVATE_PAYLOAD"),
+        ("constraint_setup_seconds", {"private": "PRIVATE_PAYLOAD"}),
+        ("constraint_setup_seconds", float("nan")),
+        ("constraint_setup_seconds", float("inf")),
+        ("constraint_setup_seconds", -0.1),
+        ("constraint_setup_seconds", True),
+        ("constraint_setup_seconds", 10**1000),
+        ("max_workflow_value_chars", "PRIVATE_PAYLOAD"),
+        ("max_workflow_value_chars", True),
+        ("max_workflow_value_chars", 0),
+    ],
+)
+def test_new_metadata_rejects_private_payloads_invalid_types_and_nonfinite_times(
+    field, value
+):
+    native = MetadataProvider({field: value})
+    provider = router(reader=native)
+    call(provider, READER_INSTRUCTIONS)
+    assert field not in provider.calls[0]
+    assert field not in provider.load()
+    assert "PRIVATE" not in json.dumps(provider.calls, allow_nan=False)
+    assert "PRIVATE" not in json.dumps(provider.load(), allow_nan=False)

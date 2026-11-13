@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 from copy import deepcopy
+from hashlib import sha256
+from math import isfinite
+import re
 import time
 from typing import Any
 
 from .providers import Completion
+from .schema import canonical
 
 _METADATA_FIELDS = frozenset(
     {
@@ -28,6 +32,119 @@ _METADATA_FIELDS = frozenset(
         "error_type",
     }
 )
+
+_LOCAL_IDENTITY_FIELDS = frozenset(
+    {
+        "adapter",
+        "adapter_requested",
+        "structured_workflow",
+        "workflow_schema_sha256",
+        "constraint_engine",
+        "constraint_setup_seconds",
+        "max_workflow_value_chars",
+    }
+)
+_KNOWN_MODEL_TYPES = frozenset(
+    {
+        "llama",
+        "mistral",
+        "mixtral",
+        "qwen2",
+        "qwen2_moe",
+        "qwen3",
+        "qwen3_moe",
+        "gemma",
+        "gemma2",
+        "gemma3",
+        "gemma3_text",
+        "phi",
+        "phi3",
+        "opt",
+        "bloom",
+        "falcon",
+        "gpt2",
+        "gpt_neo",
+        "gpt_neox",
+        "starcoder2",
+        "olmo",
+        "olmo2",
+        "granite",
+    }
+)
+_ADAPTER_COMPATIBILITY = "exact_lora_target_shapes; training_base_revision_unverified"
+
+
+def _is_sha256(value: Any) -> bool:
+    return isinstance(value, str) and re.fullmatch(r"[0-9a-f]{64}", value) is not None
+
+
+def _local_identity_metadata(record: dict[str, Any]) -> dict[str, Any]:
+    """Keep typed provenance only, never arbitrary nested provider diagnostics.
+
+    An invalid adapter identity is omitted rather than logged or interpreted as
+    unadapted. Unknown model types/engine versions need an explicit allowlist
+    update. This validates metadata shape and consistency, not model provenance.
+    """
+    result: dict[str, Any] = {}
+    if "adapter" in record:
+        adapter = record["adapter"]
+        if adapter is None:
+            result["adapter"] = None
+        elif isinstance(adapter, dict):
+            hashes = ("config_sha256", "weights_sha256", "base_config_sha256")
+            if (
+                all(_is_sha256(adapter.get(key)) for key in hashes)
+                and isinstance(adapter.get("adapter_id"), str)
+                and isinstance(adapter.get("base_model_type"), str)
+                and adapter.get("base_model_type") in _KNOWN_MODEL_TYPES
+                and adapter.get("compatibility") == _ADAPTER_COMPATIBILITY
+            ):
+                expected_id = (
+                    "sha256:"
+                    + sha256(
+                        canonical(
+                            {
+                                "config": adapter["config_sha256"],
+                                "weights": adapter["weights_sha256"],
+                            }
+                        ).encode("utf-8")
+                    ).hexdigest()
+                )
+                if adapter["adapter_id"] == expected_id:
+                    result["adapter"] = {
+                        key: adapter[key]
+                        for key in (
+                            *hashes,
+                            "adapter_id",
+                            "base_model_type",
+                            "compatibility",
+                        )
+                    }
+    for key in ("adapter_requested", "structured_workflow"):
+        if key in record and type(record[key]) is bool:
+            result[key] = record[key]
+    if "workflow_schema_sha256" in record:
+        value = record["workflow_schema_sha256"]
+        if value is None or _is_sha256(value):
+            result["workflow_schema_sha256"] = value
+    if "constraint_engine" in record:
+        value = record["constraint_engine"]
+        if value is None or value == "lm-format-enforcer/0.11.3":
+            result["constraint_engine"] = value
+    if "constraint_setup_seconds" in record:
+        value = record["constraint_setup_seconds"]
+        try:
+            valid_duration = (
+                type(value) in (int, float) and isfinite(value) and value >= 0
+            )
+        except OverflowError:
+            valid_duration = False
+        if value is None or valid_duration:
+            result["constraint_setup_seconds"] = value
+    value = record.get("max_workflow_value_chars")
+    if type(value) is int and 1 <= value <= 1_000_000:
+        result["max_workflow_value_chars"] = value
+    return result
 
 
 class RoleRoutedProvider:
@@ -97,7 +214,14 @@ class RoleRoutedProvider:
             metadata = loader()
             if not isinstance(metadata, dict):
                 raise TypeError("Reader load metadata must be a dictionary")
-            metadata = deepcopy(metadata)
+            metadata = {
+                **{
+                    key: deepcopy(value)
+                    for key, value in metadata.items()
+                    if key not in _LOCAL_IDENTITY_FIELDS
+                },
+                **_local_identity_metadata(metadata),
+            }
         else:
             metadata = {
                 "backend": "hosted",
@@ -163,6 +287,7 @@ class RoleRoutedProvider:
                     for key, value in record.items()
                     if key in _METADATA_FIELDS
                 }
+                metadata.update(_local_identity_metadata(record))
                 metadata.update(
                     role=role,
                     model=record.get("model") or provider.model,

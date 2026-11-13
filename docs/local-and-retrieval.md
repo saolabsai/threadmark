@@ -50,6 +50,148 @@ python scripts/download_models.py --model all --destination models
 
 The command pins model revisions and verifies official weight hashes. SmolLM2 downloads approximately 3.4 GB; MiniLM approximately 91 MB. Model weights retain their upstream licenses. Threadmark's Python code is MIT-licensed. Inference loads existing local safetensors with remote code disabled and never invokes the downloader.
 
+## Use an explicit local LoRA adapter
+
+Install the optional adapter dependencies and supply two local directories:
+
+```sh
+python -m pip install -e ".[local-adapter]"
+```
+
+```python
+from threadmark import LocalTransformersProvider, Settings, WorkflowMemory
+
+provider = LocalTransformersProvider(
+    "models/smollm2-1.7b-instruct",  # Full local base and tokenizer.
+    adapter_path="models/my-workflow-adapter",  # Local LoRA files.
+    device="cuda",  # Use "cpu" explicitly when CUDA is unavailable.
+)
+provider.load()  # Make shared loading time explicit; no generation yet.
+settings = Settings(model=provider.model, reasoning_effort="none")
+memory = WorkflowMemory(
+    catalog, provider, settings,
+    count_tokens=provider.count_tokens,
+    reference_history_entries=16,
+)
+```
+
+The adapter directory must contain `adapter_config.json` and
+`adapter_model.safetensors`. The base directory must contain the full model
+and tokenizer files. Adapter configuration may record a training-machine or
+Hub path; Threadmark never follows that path. It reads the caller's local
+base and attaches local tensors in memory, without downloading weights,
+running remote model code, or automatically merging/saving a new checkpoint.
+
+Support is deliberately limited to ordinary linear `CAUSAL_LM` LoRA adapters.
+Target names, tensor keys, shapes, and supported configuration options must
+match. Other adapter types, extra saved modules, special initializers, and
+unsupported layout changes fail rather than silently initializing missing
+weights. Matching shapes do not prove that the supplied base is the exact
+training revision; preserve and verify that provenance separately.
+
+Load/call metadata contains adapter configuration and weight hashes, an adapter
+identity, and a base-configuration hash. It does not expose local filesystem
+paths. Base-only calls remain identifiable as unadapted. This metadata does not
+hash all base weights or replace a full experiment manifest.
+
+Greedy local generation retains the native chat template and EOS rules. A
+complete prompt plus reserved output must fit the model's native context
+limit; it is never silently truncated. Missing EOS, incompatible files, or
+generation failures raise an error without retry or a different-model fallback.
+No hosted API charge does not mean free total execution: local hardware and
+electricity remain unpriced.
+
+## Optional structured workflow decoding
+
+The local provider has an explicit format-constrained updater mode:
+
+```sh
+python -m pip install -e ".[local-adapter,local-structured]"
+```
+
+```python
+updater = LocalTransformersProvider(
+    "models/smollm2-1.7b-instruct",
+    adapter_path="models/my-workflow-adapter",
+    device="cuda",
+    structured_workflow=True,
+    max_workflow_value_chars=256,
+)
+```
+
+`structured_workflow` defaults to `False`. The `local-structured` extra pins
+`lm-format-enforcer==0.11.3` and includes JSON Schema validation. The mode
+accepts only the workflow updater content keys `entity_catalog`,
+`reference_context`, and `new_events`. It builds a per-request schema from
+those supplied inputs and constrains generation to the supported typed JSON
+format. It neither reads benchmark oracles nor repairs source meaning.
+Keep `max_workflow_value_chars` aligned with the workflow's
+`Settings.max_value_chars`.
+
+Reader-shaped requests are rejected in this mode. Use a separate ordinary
+provider through `memory.answer(question, reader_provider=reader)` for
+free-form reading. The older current-facts `Threadmark` prompts and the
+six-strategy driver below are separate contracts, not automatic uses of this
+workflow decoder.
+
+Strict EOS, duplicate-key rejection, and post-generation JSON Schema
+validation still apply. Constraint failures raise `ProviderError`; there is
+no unconstrained retry, semantic repair, or automatic provider fallback.
+Call metadata identifies the mode, constraint backend, and per-request schema
+hash. Structural validation remains separate from reducer acceptance.
+
+A valid object can still name the wrong operation, choose the wrong permitted
+field, omit a dependency, misread a proposal, or invent a plausible value.
+Constrained decoding does not prove citation support, answer quality, or
+general RAG replacement. Evaluate committed state, historical facts, unknown
+references, and source-linked notes separately from JSON validity, and keep
+failed/unprocessed events in the planned denominator.
+
+In a fresh four-workflow local trial with the same existing adapter and memory
+settings, constraints increased committed events from 2/32 to 17/32 and
+completed workflows from 0/4 to 2/4. Both arms still had **0/4 exact final
+current states**. The result supports better progress through the typed
+interface in those cases, not reliable extraction. See the
+[separate integrity and live evaluation](workflow-memory.md#evaluation).
+
+A later diagnostic reused the same records without the adapter. Constrained
+decoding committed 18/32 events and completed 2/4 workflows; both arms still
+had 0/4 exact final states. Removing the adapter did not resolve these failures.
+This reused-case result is development evidence, not fresh validation or a
+general causal comparison of adapter quality.
+
+### Workflow updater routing
+
+Prefer passing a reader directly to
+`memory.answer(question, reader_provider=reader)` when only the updater needs
+structured decoding. For the default history-enabled workflow prompt, an
+exact-match router can be configured before the memory:
+
+```python
+from threadmark import (
+    Settings, WorkflowMemory, WORKFLOW_HISTORY_UPDATER_INSTRUCTIONS,
+)
+from threadmark.routed_provider import RoleRoutedProvider
+
+router = RoleRoutedProvider(
+    reader, updater,
+    updater_instructions={WORKFLOW_HISTORY_UPDATER_INSTRUCTIONS},
+)
+memory = WorkflowMemory(
+    catalog, router,
+    Settings(model=updater.model, reasoning_effort=updater.reasoning_effort),
+    count_tokens=updater.count_tokens,
+    reference_history_entries=16,
+)
+assert memory.updater_instructions == WORKFLOW_HISTORY_UPDATER_INSTRUCTIONS
+```
+
+For custom updater prompts, obtain the exact string from the configured
+memory's read-only `updater_instructions` property and register that string.
+Recreate the route when the prompt/history configuration changes. Do not route
+from model outputs, oracle labels, or a partial instruction match. The ordinary
+no-history default is exported as `WORKFLOW_UPDATER_INSTRUCTIONS`.
+
 ## Experimental sparse-event memory
 
 `EventDeltaMemory` asks the model to extract only explicitly stated changes in each new event. Code then applies those changes chronologically. This removes the need for the model to repeat every unchanged fact correctly at each update.

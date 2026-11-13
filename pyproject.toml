@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "saolabs-threadmark"
-version = "0.1.0"
+version = "0.2.0"
 description = "Source-backed working memory for evolving AI workflows"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -25,9 +25,11 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10", "build>=1.2,<2", "black==26.10.1"]
+dev = ["pytest>=8,<10", "build>=1.2,<2", "black==26.10.1", "jsonschema>=4.23,<5"]
 paper = ["reportlab>=4,<5", "matplotlib>=3.8,<4"]
 local = ["torch>=2.6,<3", "transformers>=4.53,<5", "safetensors>=0.4,<1"]
+local-adapter = ["torch>=2.6,<3", "transformers>=4.53,<5", "safetensors>=0.4,<1", "peft>=0.17.1,<0.18"]
+local-structured = ["torch>=2.6,<3", "transformers>=4.53,<5", "safetensors>=0.4,<1", "lm-format-enforcer==0.11.3", "jsonschema>=4.23,<5"]
 
 [project.urls]
 Homepage = "https://github.com/saolabsai/threadmark"
