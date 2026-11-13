@@ -10,6 +10,76 @@ The existing `Threadmark` API remains available for its current-fact register an
 
 This is a Python library and comparison harness. Its workflow memory methods use fixed provider weights. A separate research component trains LoRA event classifiers on Qwen and SmolLM2; that narrow component does not establish a new foundation model, a learned decoder memory layer, or general replacement of retrieval-augmented generation.
 
+## Budgeted context for different models
+
+The goal is to process new information once, keep useful state outside the
+model, and send a bounded context on each subsequent request. `ActiveContext`
+compiles that context from `WorkflowMemory` without another model call. It
+preserves selected current facts, pending decisions and their original evidence;
+adds history and relevant records when they fit; and reports omissions. Essential
+context that cannot fit raises `ContextBudgetExceeded` instead of being cut off.
+
+```python
+from threadmark import ActiveContext
+from threadmark.context import token_counter
+
+# memory is an existing WorkflowMemory, updated with new events only.
+request = ActiveContext(memory).compile(
+    "What is approved now, and what is still pending?",
+    max_input_tokens=4096,
+    count_tokens=token_counter(),  # requires the explicitly prepared local cache
+)
+# Pass request.instructions and request.content to a compatible reader adapter.
+# request.rendered_request is the exact text measured by the supplied counter.
+```
+
+The default JSON-envelope count excludes provider-specific chat framing. Supply
+the target model's complete request renderer and tokenizer for a native token
+budget, including tools and any additional messages. This is portable external
+memory; model weights stay unchanged. Compression does not establish extraction
+or answer accuracy, and ingesting new text can still require model calls.
+
+See the [active-context guide](docs/active-context.md) for the architecture,
+equations, incremental use, token accounting, and limits. Its offline evaluation
+uses application-supplied operations and is separate from the failed November 10
+extractor experiment; no trained checkpoint was promoted by this change.
+
+## 0.2.0: workflow integrity and local extraction
+
+Version 0.2.0 adds ordered distinct changes, proposals, and notes within one
+record; indexed proposal identities; atomic `apply_operations` without an LLM
+call; and an optional recent-history window for the updater. New workflow
+snapshots use schema 2 and still read schema 1. Existing defaults preserve the
+current-facts/open-proposals reference unless history is explicitly enabled.
+
+Local inference can now load an explicitly supplied LoRA adapter alongside a
+separately supplied base model. Optional structured workflow decoding constrains
+the JSON operation format. It does not determine whether an operation is true.
+See [workflow memory](docs/workflow-memory.md) and
+[local adapters and decoding](docs/local-and-retrieval.md#use-an-explicit-local-lora-adapter)
+for API examples, optional dependencies, and failure behavior.
+
+These changes are **experimental, not a production-readiness claim**. Offline
+integrity checks improved from 9/12 to 12/12 cases with recorded operations,
+including 1,000 unique updates under an explicit 2 MB packet cap. They do not
+measure language-model accuracy. The first local-adapter trial completed 0/4
+eight-event workflows in both software arms and is now development evidence.
+
+A separate fresh four-workflow comparison used the same fixed adapter and
+improved memory in both arms. Constrained decoding committed 17/32 events and
+completed 2/4 workflows, versus 2/32 and 0/4 with ordinary decoding. **Both
+produced 0/4 exact final current states.** Committing a valid operation can
+still preserve the wrong fact or omit an update. No model was retrained in
+these trials, no RAG comparison was run, and local GPU/electricity costs remain
+unpriced. Historical benchmarks below do not measure these APIs or decoder
+settings. See the [engineering evaluation notes](docs/workflow-memory.md#evaluation).
+
+A follow-up reused those same cases with the unadapted base model. Constraints
+committed 18/32 events and completed 2/4 workflows, but both decoding arms again
+had 0/4 exact final states. Removing the adapter did not resolve the observed
+failures. This is a separate development diagnostic, not fresh validation or
+a general conclusion about adapter quality.
+
 ## Research and mathematical design
 
 Read the [November 1 long-conversation evaluation](research/evaluation-2026-11-01.md) for the history and proposal improvements, the separate 54-question study and 18-question follow-up, costs, and limitations. The packaged API adds persistence and validation around the tested algorithm; it has not undergone another paid model evaluation.
@@ -46,6 +116,7 @@ Then install and run:
 
 ```bash
 python -m pip install -e .
+python examples/use_application_events.py
 python examples/use_workflow_memory.py
 python -m threadmark demo
 python -m threadmark setup-tokenizer
@@ -54,6 +125,11 @@ python -m threadmark compare --input examples/workflow.json --output runs/prepar
 ```
 
 The workflow-memory example and demo use recorded responses and a conservative byte counter to demonstrate the data flow. They are not fresh model evaluations. The example includes an external proposal label, its acceptance, an owner handoff, a free-form answer, and snapshot restoration. `setup-tokenizer` downloads official tokenizer data once; it does not make a paid API call. Subsequent inspection and preparation run offline. Preparation validates the fixture and writes a request plan without calling OpenAI. See [workflow-memory usage](docs/workflow-memory.md) for the new API, and [usage](docs/usage.md) for the existing CLI, paid comparison, input format, and output files.
+
+The [application-events example](examples/use_application_events.py) uses typed
+operations supplied by the application. It demonstrates ordered handoffs,
+multiple proposals, acceptance/rejection, and snapshot replay without model or
+tokenizer calls.
 
 ## Latest: long-conversation memory improvement
 

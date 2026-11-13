@@ -1,7 +1,9 @@
 """Mocked local-provider tests require neither torch nor model downloads."""
 
 from contextlib import nullcontext
+from hashlib import sha256
 import json
+import logging
 import sys
 from types import SimpleNamespace
 
@@ -65,7 +67,7 @@ class FakeTokenizer:
 
 class FakeModel:
     def __init__(self):
-        self.config = SimpleNamespace(max_position_embeddings=64)
+        self.config = SimpleNamespace(max_position_embeddings=64, model_type="llama")
         self.generation_config = SimpleNamespace(eos_token_id=2, pad_token_id=0)
         self.device = None
         self.evaluating = False
@@ -73,6 +75,19 @@ class FakeModel:
         self.generations = []
         self.new_ids = [21, 22, 2]
         self.failure = None
+        self.modules = [
+            (
+                "model.layers.0.self_attn.q_proj",
+                SimpleNamespace(
+                    weight=SimpleNamespace(shape=(6, 4)),
+                    in_features=4,
+                    out_features=6,
+                ),
+            )
+        ]
+
+    def named_modules(self):
+        return iter(self.modules)
 
     def to(self, device):
         self.device = device
@@ -153,7 +168,8 @@ def test_constructor_is_lightweight_and_imports_no_optional_dependencies(
 ):
     monkeypatch.setitem(sys.modules, "torch", None)
     monkeypatch.setitem(sys.modules, "transformers", None)
-    provider = LocalTransformersProvider(tmp_path)
+    monkeypatch.setitem(sys.modules, "peft", None)
+    provider = LocalTransformersProvider(tmp_path, adapter_path=tmp_path / "adapter")
     assert provider.calls == []
     assert provider.context_limit is None
     assert provider.reasoning_effort == "none"
@@ -355,8 +371,587 @@ def test_missing_local_directory_never_attempts_a_download(runtime):
         {"max_context_tokens": True},
         {"max_context_tokens": 0},
         {"model": "bad model"},
+        {"adapter_path": ""},
+        {"adapter_path": True},
+        {"structured_workflow": 1},
+        {"max_workflow_value_chars": True},
+        {"max_workflow_value_chars": 0},
     ],
 )
 def test_constructor_rejects_invalid_configuration(tmp_path, kwargs):
     with pytest.raises(ValueError):
         LocalTransformersProvider(tmp_path, **kwargs)
+
+
+class FakeWeight:
+    def __init__(self, shape, floating=True):
+        self.shape, self.floating = shape, floating
+
+    def is_floating_point(self):
+        return self.floating
+
+
+@pytest.fixture
+def adapter(runtime, monkeypatch):
+    path = runtime.path / "adapter"
+    path.mkdir()
+    config = {
+        "peft_type": "LORA",
+        "task_type": "CAUSAL_LM",
+        "inference_mode": False,
+        "base_model_name_or_path": "/opt/ml/input/data/training/model",
+        "r": 2,
+        "lora_alpha": 4,
+        "lora_dropout": 0.05,
+        "target_modules": ["q_proj"],
+        "bias": "none",
+    }
+    (path / "adapter_config.json").write_text(json.dumps(config), encoding="utf-8")
+    (path / "adapter_model.safetensors").write_bytes(b"mock safetensors")
+    (runtime.path / "config.json").write_text(
+        '{"model_type":"llama"}', encoding="utf-8"
+    )
+    prefix = "base_model.model.model.layers.0.self_attn.q_proj"
+    state = {
+        prefix + ".lora_A.weight": FakeWeight((2, 4)),
+        prefix + ".lora_B.weight": FakeWeight((6, 2)),
+    }
+    values = SimpleNamespace(
+        path=path,
+        config=config,
+        state=state,
+        configs=[],
+        loads=[],
+        attachments=[],
+        assignments=[],
+        result=SimpleNamespace(
+            missing_keys=["base_model.model.model.embed_tokens.weight"],
+            unexpected_keys=[],
+        ),
+    )
+
+    def load_config(**kwargs):
+        values.configs.append(kwargs)
+        return SimpleNamespace(**kwargs)
+
+    def load_weights(*args, **kwargs):
+        values.loads.append((args, kwargs))
+        return values.state
+
+    def attach(*args, **kwargs):
+        values.attachments.append((args, kwargs))
+        return runtime.model
+
+    def assign(*args, **kwargs):
+        values.assignments.append((args, kwargs))
+        return values.result
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("No PEFT or Hub file resolver may be called")
+
+    monkeypatch.setitem(
+        sys.modules,
+        "peft",
+        SimpleNamespace(
+            LoraConfig=load_config,
+            get_peft_model=attach,
+            set_peft_model_state_dict=assign,
+            PeftModel=SimpleNamespace(from_pretrained=forbidden),
+            AutoPeftModelForCausalLM=SimpleNamespace(from_pretrained=forbidden),
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "safetensors", SimpleNamespace())
+    monkeypatch.setitem(
+        sys.modules, "safetensors.torch", SimpleNamespace(load_file=load_weights)
+    )
+    return values
+
+
+def test_local_adapter_uses_explicit_base_and_in_memory_safetensors(runtime, adapter):
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    metadata = provider.load()
+    assert runtime.model_loads[0][0] == (str(runtime.path.resolve()),)
+    assert runtime.tokenizer_loads[0][0] == (str(runtime.path.resolve()),)
+    assert adapter.loads == [
+        ((str(adapter.path / "adapter_model.safetensors"),), {"device": "cpu"})
+    ]
+    assert adapter.configs[0]["base_model_name_or_path"] == str(runtime.path.resolve())
+    assert adapter.configs[0]["inference_mode"] is True
+    assert "revision" not in adapter.configs[0]
+    assert adapter.assignments[0][1] == {
+        "adapter_name": "default",
+        "ignore_mismatched_sizes": False,
+    }
+    assert runtime.model.frozen and runtime.model.evaluating
+    identity = metadata["adapter"]
+    assert identity["adapter_id"].startswith("sha256:")
+    assert identity["weights_sha256"] == sha256(b"mock safetensors").hexdigest()
+    assert identity["base_model_type"] == "llama"
+    assert "training_base_revision_unverified" in identity["compatibility"]
+    complete(provider)
+    assert provider.calls[0]["adapter"] == identity
+    assert provider.calls[0]["adapter_requested"] is True
+    assert len(adapter.loads) == len(adapter.assignments) == 1
+    assert str(runtime.path) not in json.dumps(metadata)
+    assert "/opt/ml" not in json.dumps(provider.calls)
+    identity["weights_sha256"] = "changed"
+    assert provider.load()["adapter"]["weights_sha256"] != "changed"
+
+
+def test_base_only_identity_is_explicitly_unadapted(runtime):
+    provider = LocalTransformersProvider(runtime.path, device="cpu")
+    assert provider.load()["adapter"] is None
+    complete(provider)
+    assert provider.calls[0]["adapter"] is None
+    assert provider.calls[0]["adapter_requested"] is False
+
+
+def test_adapter_token_count_loads_neither_base_nor_adapter_weights(runtime, adapter):
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    assert provider.count_tokens("hello") == 5
+    assert runtime.model_loads == adapter.loads == adapter.attachments == []
+
+
+@pytest.mark.parametrize(
+    "missing", ["adapter_config.json", "adapter_model.safetensors"]
+)
+def test_missing_adapter_files_fail_without_model_load_or_pickle_fallback(
+    runtime, adapter, missing
+):
+    (adapter.path / missing).unlink()
+    (adapter.path / "adapter_model.bin").write_bytes(b"must not load pickle")
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    with pytest.raises(ProviderError, match="Local model loading failed"):
+        provider.load()
+    assert runtime.model_loads == adapter.loads == adapter.attachments == []
+
+
+@pytest.mark.parametrize(
+    "change",
+    [
+        {"peft_type": "PREFIX_TUNING"},
+        {"task_type": "SEQ_CLS"},
+        {"model_type": "gpt2"},
+        {"r": True},
+        {"r": 0},
+        {"lora_alpha": float("nan")},
+        {"lora_dropout": 1.0},
+        {"target_modules": "q_proj"},
+        {"target_modules": ["q_proj", "q_proj"]},
+        {"modules_to_save": ["lm_head"]},
+        {"use_dora": True},
+        {"bias": "all"},
+        {"layer_replication": [[0, 1]]},
+        {"new_variant_option": True},
+        {"init_lora_weights": "loftq"},
+    ],
+)
+def test_unsupported_adapter_configuration_fails_before_base_load(
+    runtime, adapter, change
+):
+    (adapter.path / "adapter_config.json").write_text(
+        json.dumps({**adapter.config, **change}), encoding="utf-8"
+    )
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    with pytest.raises(ProviderError, match="Local model loading failed"):
+        provider.load()
+    assert runtime.model_loads == adapter.loads == adapter.attachments == []
+
+
+@pytest.mark.parametrize(
+    "problem", ["missing", "extra", "shape", "integer", "target", "model_type", "nonlinear"]
+)
+def test_adapter_must_exactly_match_base_target_tensors(runtime, adapter, problem):
+    key = next(iter(adapter.state))
+    if problem == "missing":
+        adapter.state.pop(key)
+    elif problem == "extra":
+        adapter.state["unrelated.weight"] = FakeWeight((2, 4))
+    elif problem == "shape":
+        adapter.state[key] = FakeWeight((2, 5))
+    elif problem == "integer":
+        adapter.state[key] = FakeWeight((2, 4), floating=False)
+    elif problem == "target":
+        runtime.model.modules = []
+    elif problem == "nonlinear":
+        del runtime.model.modules[0][1].in_features
+    else:
+        runtime.model.config.model_type = "gpt2"
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    with pytest.raises(ProviderError, match="Local model loading failed"):
+        provider.load()
+    assert adapter.attachments == []
+    assert runtime.model.generations == []
+
+
+@pytest.mark.parametrize("problem", ["missing", "extra"])
+def test_peft_load_must_not_leave_uninitialized_adapter_tensors(
+    runtime, adapter, problem
+):
+    if problem == "missing":
+        adapter.result.missing_keys.append(
+            "base_model.model.q_proj.lora_A.default.weight"
+        )
+    else:
+        adapter.result.unexpected_keys.append("unexpected.weight")
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    with pytest.raises(ProviderError, match="Local model loading failed"):
+        provider.load()
+    assert provider._model is None
+    assert runtime.model.generations == []
+
+
+def test_adapter_identity_detects_changed_checkpoint(runtime, adapter):
+    first = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    ).load()["adapter"]
+    (adapter.path / "adapter_model.safetensors").write_bytes(
+        b"different mock checkpoint"
+    )
+    second = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    ).load()["adapter"]
+    assert first["adapter_id"] != second["adapter_id"]
+
+
+def test_adapter_preserves_missing_eos_rejection_and_records_identity(runtime, adapter):
+    runtime.model.new_ids = [30] * 8
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", adapter_path=adapter.path
+    )
+    with pytest.raises(ProviderError, match="truncated"):
+        complete(provider)
+    assert provider.calls[0]["status"] == "incomplete"
+    assert provider.calls[0]["adapter"]["weights_sha256"] == sha256(
+        b"mock safetensors"
+    ).hexdigest()
+    assert len(runtime.model.generations) == 1
+
+
+def test_model_path_cannot_auto_resolve_an_adapter_base(runtime, adapter):
+    provider = LocalTransformersProvider(adapter.path, device="cpu")
+    with pytest.raises(ProviderError, match="base model"):
+        provider.load()
+    assert runtime.tokenizer_loads == runtime.model_loads == adapter.loads == []
+
+
+@pytest.fixture
+def grammar(monkeypatch, runtime):
+    values = SimpleNamespace(data_builds=[], parsers=[], prefixes=[], invocations=[])
+
+    def tokenizer_data(tokenizer):
+        values.data_builds.append(tokenizer)
+        return SimpleNamespace(tokenizer_alphabet='abc{}[]"', eos_token_id=-1)
+
+    def parser(schema, *, config):
+        result = SimpleNamespace(schema=schema, config=config)
+        values.parsers.append(result)
+        return result
+
+    def prefix(data, instance):
+        # The pinned package overwrites parser config during construction.
+        instance.config = SimpleNamespace(force_json_field_order=True)
+
+        def allowed(batch_id, ids):
+            values.invocations.append((batch_id, ids))
+            return [2]
+
+        values.prefixes.append((data, instance, allowed))
+        return allowed
+
+    monkeypatch.setitem(
+        sys.modules, "lmformatenforcer", SimpleNamespace(JsonSchemaParser=parser)
+    )
+    monkeypatch.setitem(
+        sys.modules,
+        "lmformatenforcer.characterlevelparser",
+        SimpleNamespace(
+            CharacterLevelParserConfig=lambda **kwargs: SimpleNamespace(**kwargs),
+        ),
+    )
+    monkeypatch.setitem(sys.modules, "lmformatenforcer.integrations", SimpleNamespace())
+    monkeypatch.setitem(
+        sys.modules,
+        "lmformatenforcer.integrations.transformers",
+        SimpleNamespace(
+            build_token_enforcer_tokenizer_data=tokenizer_data,
+            build_transformers_prefix_allowed_tokens_fn=prefix,
+        ),
+    )
+    monkeypatch.setattr(
+        "threadmark.local_provider.package_version", lambda name: "0.11.3"
+    )
+    runtime.tokenizer.output_text = '{"events":[]}'
+    return values
+
+
+def workflow_content(identifier="e1"):
+    return {
+        "entity_catalog": [{"entity_id": "p", "label": "Project", "fields": ["owner"]}],
+        "reference_context": {"current_state": {"facts": []}, "open_proposals": []},
+        "new_events": [
+            {
+                "event_id": identifier,
+                "timestamp": "2026-11-09T00:00:00Z",
+                "sender": "User",
+                "text": "A workflow event.",
+            }
+        ],
+    }
+
+
+def workflow_complete(provider, **kwargs):
+    return provider.complete(
+        instructions="Extract workflow changes.",
+        content=kwargs.pop("content", workflow_content()),
+        max_output_tokens=kwargs.pop("max_output_tokens", 8),
+        **kwargs,
+    )
+
+
+def test_structured_workflow_builds_fresh_schema_and_caches_only_tokenizer(
+    runtime, grammar
+):
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    workflow_complete(provider)
+    workflow_complete(provider, content=workflow_content("e2"))
+    assert len(grammar.data_builds) == 1
+    assert len(grammar.parsers) == len(grammar.prefixes) == 2
+    assert grammar.parsers[0] is not grammar.parsers[1]
+    assert grammar.prefixes[0][0].eos_token_id == [2]
+    for instance in grammar.parsers:
+        assert instance.config.force_json_field_order is False
+        assert instance.config.max_consecutive_whitespaces == 12
+        assert instance.config.max_json_array_length == 128
+    call1, call2 = provider.calls
+    assert call1["structured_workflow"] is call2["structured_workflow"] is True
+    assert call1["workflow_schema_sha256"] != call2["workflow_schema_sha256"]
+    assert call1["constraint_engine"] == "lm-format-enforcer/0.11.3"
+    assert call1["constraint_setup_seconds"] >= 0
+    prefix = runtime.model.generations[0]["prefix_allowed_tokens_fn"]
+    assert prefix(0, FakeVector([11])) == [2]
+    assert len(grammar.invocations) == 1
+    assert provider.load()["structured_workflow"] is True
+
+
+def test_structured_mode_can_toggle_sequentially_without_schema_state_leak(
+    runtime, grammar
+):
+    provider = LocalTransformersProvider(runtime.path, device="cpu")
+    workflow_complete(provider)
+    provider.structured_workflow = True
+    workflow_complete(provider)
+    provider.structured_workflow = False
+    workflow_complete(provider)
+    assert [r["structured_workflow"] for r in provider.calls] == [False, True, False]
+    assert [bool(r["workflow_schema_sha256"]) for r in provider.calls] == [
+        False, True, False
+    ]
+    assert [
+        "prefix_allowed_tokens_fn" in g for g in runtime.model.generations
+    ] == [False, True, False]
+    assert len(runtime.model_loads) == 1
+
+
+def test_structured_mode_rejects_reader_or_malformed_requests_before_model_load(
+    runtime, grammar
+):
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    with pytest.raises(ProviderError, match="request validation") as failure:
+        complete(provider)
+    assert failure.value.request_started is False
+    assert runtime.model_loads == runtime.model.generations == grammar.parsers == []
+    assert provider.calls[0]["workflow_schema_sha256"] is None
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '{"events":[],"events":[]}',
+        '{"events":[],"extra":1}',
+        '{"events":[{"event_id":"foreign","operations":[]}]}',
+        '{"events":[{"event_id":"e1","operations":[{"op":"delete",'
+        '"entity_id":"p","field":"owner","value":null,'
+        '"proposal_id":null,"reason":null}]}]}',
+        '{"events":[{"event_id":"e1","operations":[{"op":"set",'
+        '"entity_id":"p","field":"owner","value":null,'
+        '"proposal_id":null,"reason":null}]}]}',
+        'not-json',
+    ],
+)
+def test_structured_postvalidation_rejects_even_native_eos_after_constraint_failure(
+    runtime, grammar, text
+):
+    runtime.tokenizer.output_text = text
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    with pytest.raises(ProviderError, match="strict validation") as failure:
+        workflow_complete(provider)
+    assert failure.value.request_started is True
+    assert provider.calls[0]["status"] == "invalid_structured_output"
+    assert provider.calls[0]["usage"]["output_tokens"] == 3
+    assert len(runtime.model.generations) == 1
+
+
+def test_structured_mode_does_not_silently_repair_semantically_wrong_values(
+    runtime, grammar
+):
+    runtime.tokenizer.output_text = json.dumps(
+        {
+            "events": [
+                {
+                    "event_id": "e1",
+                    "operations": [
+                        {
+                            "op": "set",
+                            "entity_id": "p",
+                            "field": "owner",
+                            "value": "unmentioned",
+                            "proposal_id": None,
+                            "reason": None,
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    assert workflow_complete(provider).text == runtime.tokenizer.output_text
+
+
+def test_structured_mode_respects_configured_value_length(runtime, grammar):
+    runtime.tokenizer.output_text = json.dumps(
+        {
+            "events": [
+                {
+                    "event_id": "e1",
+                    "operations": [
+                        {
+                            "op": "set",
+                            "entity_id": "p",
+                            "field": "owner",
+                            "value": "long",
+                            "proposal_id": None,
+                            "reason": None,
+                        }
+                    ],
+                }
+            ]
+        }
+    )
+    provider = LocalTransformersProvider(
+        runtime.path,
+        device="cpu",
+        structured_workflow=True,
+        max_workflow_value_chars=3,
+    )
+    with pytest.raises(ProviderError, match="strict validation"):
+        workflow_complete(provider)
+
+
+def test_structured_mode_keeps_eos_rejection(runtime, grammar):
+    runtime.model.new_ids = [30] * 8
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    with pytest.raises(ProviderError, match="truncated"):
+        workflow_complete(provider)
+    assert provider.calls[0]["status"] == "incomplete"
+
+
+def test_missing_constraint_dependency_has_no_unconstrained_fallback(
+    runtime, grammar, monkeypatch
+):
+    monkeypatch.setitem(sys.modules, "lmformatenforcer", None)
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    with pytest.raises(ProviderError, match="constraint initialization") as failure:
+        workflow_complete(provider)
+    assert failure.value.request_started is False
+    assert runtime.model.generations == []
+
+
+def test_constraint_runtime_version_must_match_recorded_pin(
+    runtime, grammar, monkeypatch
+):
+    monkeypatch.setattr(
+        "threadmark.local_provider.package_version", lambda name: "99.0"
+    )
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    with pytest.raises(ProviderError, match="constraint initialization"):
+        workflow_complete(provider)
+    assert runtime.model.generations == []
+
+
+def test_constraint_internal_prefix_logs_are_redacted_and_abort_without_retry(
+    runtime, grammar, monkeypatch, caplog
+):
+    secret = "PRIVATE_WORKFLOW_PREFIX"
+    original_generate = runtime.model.generate
+    root_logger = logging.getLogger()
+    initial_filters = list(root_logger.filters)
+
+    def logging_prefix(data, parser):
+        def invoke(batch_id, ids):
+            root_logger.warning("Unrelated application diagnostic")
+            record = logging.LogRecord(
+                name="root",
+                level=logging.ERROR,
+                pathname="C:/packages/lmformatenforcer/tokenenforcer.py",
+                lineno=1,
+                msg="Parser prefix: %s",
+                args=(secret,),
+                exc_info=None,
+            )
+            record.stack_info = secret
+            record.exc_text = secret
+            root_logger.handle(record)
+            return [2]  # The library's unsafe EOS-on-error behavior is rejected.
+
+        return invoke
+
+    monkeypatch.setattr(
+        sys.modules["lmformatenforcer.integrations.transformers"],
+        "build_transformers_prefix_allowed_tokens_fn",
+        logging_prefix,
+    )
+
+    def generate(**kwargs):
+        kwargs["prefix_allowed_tokens_fn"](0, FakeVector([11]))
+        return original_generate(**kwargs)
+
+    runtime.model.generate = generate
+    provider = LocalTransformersProvider(
+        runtime.path, device="cpu", structured_workflow=True
+    )
+    with pytest.raises(ProviderError, match="constraint engine failed") as failure:
+        workflow_complete(provider)
+    assert failure.value.request_started is True
+    assert secret not in caplog.text
+    assert secret not in json.dumps(provider.calls)
+    assert "Unrelated application diagnostic" in caplog.text
+    assert "redacted" in caplog.text
+    assert list(root_logger.filters) == initial_filters
+    assert runtime.model.generations == []

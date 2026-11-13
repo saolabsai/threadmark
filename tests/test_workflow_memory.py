@@ -605,7 +605,7 @@ def test_snapshot_is_a_replay_journal_without_a_trusted_derived_cache():
         "operations",
     }
     assert saved["schema"] == "threadmark-workflow-memory"
-    assert saved["schema_version"] == 1
+    assert saved["schema_version"] == 2
     assert [group["event_id"] for group in saved["operations"]] == ["e1", "e2", "e3"]
     assert "current_state" not in saved and "fact_history" not in saved
 
@@ -654,7 +654,7 @@ def test_snapshot_preserves_custom_limits_settings_and_prompts():
     assert reader.calls[0]["max_output_tokens"] == 777
 
 
-@pytest.mark.parametrize("bad_version", [True, 0, 2, "1", None])
+@pytest.mark.parametrize("bad_version", [True, 0, 3, "1", None])
 def test_snapshot_rejects_unknown_or_noninteger_schema_versions(bad_version):
     m, _ = decision_memory()
     saved = m.snapshot()
@@ -951,3 +951,210 @@ def test_long_generated_canonical_reference_resolves_exact_open_proposal_and_res
         canonical(restored.snapshot()), provider=Scripted(), count_tokens=len
     )
     assert replay.memory_packet() == packet
+
+
+def test_multiple_notes_and_assignments_for_one_event_target_preserve_order():
+    m, _ = memory(
+        output(
+            (
+                "e1",
+                [
+                    op("note", "depends_on", "Legal approval"),
+                    op("note", "depends_on", "Finance approval"),
+                    op("set", "owner", "Mira", reason="Initial assignment"),
+                    op("set", "owner", "Noah", reason="Mira changed teams"),
+                ],
+            )
+        )
+    )
+    m.ingest([event(1)])
+    packet = m.memory_packet()
+    assert value(m, "owner")["value"] == "Noah"
+    versions = packet["fact_history"]
+    assert [v["value"] for v in versions] == ["Mira", "Noah"]
+    assert versions[0]["superseded_by_event_id"] == "e1"
+    assert versions[1]["supersedes_version_id"] == versions[0]["version_id"]
+    claims = packet["explanatory_claims"]
+    assert [c["value"] for c in claims[:2]] == ["Legal approval", "Finance approval"]
+    assert [c["related_version_id"] for c in claims[2:]] == [
+        v["version_id"] for v in versions
+    ]
+    assert all(c["evidence_event_ids"] == ["e1"] for c in claims)
+
+
+@pytest.mark.parametrize("resolution", ["accept", "reject"])
+def test_multiple_same_target_proposals_and_resolutions_in_one_event(resolution):
+    m, _ = memory(
+        output(
+            (
+                "e1",
+                [
+                    op("set", value="CSV"),
+                    op("propose", value="JSON", proposal="A"),
+                    op("propose", value="Parquet", proposal="B"),
+                    op(resolution, proposal="A"),
+                    op(resolution, proposal="B"),
+                ],
+            )
+        )
+    )
+    m.ingest([event(1)])
+    packet = m.memory_packet()
+    assert [p["proposal_id"] for p in packet["proposals"]] == [
+        "e1::p::scope",
+        "e1::p::scope::2",
+    ]
+    assert [p["external_alias"] for p in packet["proposals"]] == ["A", "B"]
+    assert all(
+        p["status"] == ("accepted" if resolution == "accept" else "rejected")
+        for p in packet["proposals"]
+    )
+    assert packet["unresolved_references"] == []
+    assert value(m)["value"] == ("Parquet" if resolution == "accept" else "CSV")
+    assert value(m)["evidence_event_ids"] == ["e1"]
+    assert [v["value"] for v in packet["fact_history"]] == (
+        ["CSV", "JSON", "Parquet"] if resolution == "accept" else ["CSV"]
+    )
+
+
+def test_indexed_proposals_are_target_scoped_and_resolve_after_snapshot_restore():
+    m, _ = memory(
+        output(
+            (
+                "e1",
+                [
+                    op("propose", value="JSON"),
+                    op("propose", "owner", "Mira"),
+                    op("propose", value="Avro", entity="q"),
+                    op("propose", value="Parquet"),
+                    op("propose", value="XML"),
+                ],
+            )
+        )
+    )
+    m.ingest([event(1)])
+    identifiers = [p["proposal_id"] for p in m.memory_packet()["proposals"]]
+    assert identifiers == [
+        "e1::p::scope",
+        "e1::p::owner",
+        "e1::q::scope",
+        "e1::p::scope::2",
+        "e1::p::scope::3",
+    ]
+    second = proposal_identifier("e1", "p", "scope", occurrence=2)
+    resolver = Scripted(output(("e2", [op("accept", proposal=second)])))
+    restored = WorkflowMemory.from_snapshot(
+        canonical(m.snapshot()), provider=resolver, count_tokens=len
+    )
+    assert resolver.calls == []
+    assert restored.memory_packet() == m.memory_packet()
+    restored.ingest([event(2)])
+    assert value(restored)["value"] == "Parquet"
+    assert value(restored)["evidence_event_ids"] == ["e1", "e2"]
+    assert resolver.calls[0]["content"]["reference_context"]["open_proposals"][3][
+        "proposal_id"
+    ] == second
+    packet = restored.memory_packet()
+    assert [p["status"] for p in packet["proposals"]] == [
+        "open",
+        "open",
+        "open",
+        "accepted",
+        "open",
+    ]
+    replay = WorkflowMemory.from_snapshot(restored.snapshot(), provider=Scripted())
+    assert replay.memory_packet() == packet
+    assert all(p["status"] == "open" for p in m.memory_packet()["proposals"])
+
+
+def test_indexed_canonical_id_resolves_same_batch_without_an_external_alias():
+    identifier = proposal_identifier("e1", "p", "scope", occurrence=2)
+    m, _ = memory(
+        output(
+            ("e1", [op("propose", value="JSON"), op("propose", value="Parquet")]),
+            ("e2", [op("accept", proposal=identifier)]),
+        )
+    )
+    m.ingest([event(1), event(2)])
+    assert value(m)["value"] == "Parquet"
+    assert value(m)["evidence_event_ids"] == ["e1", "e2"]
+
+
+def test_shared_alias_on_same_event_alternatives_remains_ambiguous():
+    m, _ = memory(
+        output(
+            (
+                "e1",
+                [
+                    op("propose", value="JSON", proposal="SCOPE"),
+                    op("propose", value="Parquet", proposal="SCOPE"),
+                    op("accept", proposal="SCOPE"),
+                ],
+            )
+        )
+    )
+    m.ingest([event(1)])
+    packet = m.memory_packet()
+    assert value(m)["value"] is None
+    assert all(p["status"] == "open" for p in packet["proposals"])
+    assert packet["unresolved_references"][0]["candidate_proposal_ids"] == [
+        "e1::p::scope",
+        "e1::p::scope::2",
+    ]
+
+
+@pytest.mark.parametrize(
+    "operation",
+    [
+        op("set", value="CSV"),
+        op("clear"),
+        op("propose", value="JSON"),
+        op("accept", proposal="A"),
+        op("reject", proposal="A"),
+        op("note", "depends_on", "Legal approval"),
+    ],
+)
+def test_exact_duplicate_operations_still_fail_atomically(operation):
+    m, _ = memory(
+        output(("e1", [op("set", value="existing")])),
+        output(("e2", [operation, dict(reversed(list(operation.items())))])),
+    )
+    m.ingest([event(1)])
+    before = m.snapshot()
+    with pytest.raises(ValueError, match="Duplicate operation within event"):
+        m.ingest([event(2)])
+    assert m.snapshot() == before
+
+
+def test_later_chunk_failure_rolls_back_multiple_same_target_proposals():
+    first, second = event(1, "a" * 100), event(2, "b" * 100)
+    limit = max(len(canonical({"events": [e]})) for e in (first, second))
+    provider = Scripted(
+        output(("e1", [op("propose", value="JSON"), op("propose", value="Parquet")])),
+        {"events": [], "extra": True},
+    )
+    m = WorkflowMemory(
+        CATALOG, provider, Settings(chunk_tokens=limit), count_tokens=len
+    )
+    before = m.snapshot()
+    with pytest.raises(ValueError):
+        m.ingest([first, second])
+    assert len(provider.calls) == 2
+    reference = provider.calls[1]["content"]["reference_context"]
+    assert [p["proposal_id"] for p in reference["open_proposals"]] == [
+        "e1::p::scope",
+        "e1::p::scope::2",
+    ]
+    assert m.snapshot() == before
+
+
+def test_indexed_proposal_identifiers_cannot_collide_with_encoded_components():
+    assert proposal_identifier("e1", "p", "scope") == "e1::p::scope"
+    assert proposal_identifier("e1", "p", "scope", occurrence=2) == "e1::p::scope::2"
+    assert proposal_identifier("e1", "p", "scope::2") == "e1::p::scope%3A%3A2"
+
+
+@pytest.mark.parametrize("occurrence", [0, 129, True, 1.0, "2", None])
+def test_proposal_identifier_rejects_invalid_occurrence(occurrence):
+    with pytest.raises(ValueError, match="occurrence"):
+        proposal_identifier("e1", "p", "scope", occurrence=occurrence)
