@@ -22,7 +22,6 @@ from typing import Any
 from .providers import Completion, ProviderError
 from .schema import canonical, parse_json
 
-
 _CONSTRAINT_VERSION = "0.11.3"
 
 

@@ -99,14 +99,17 @@ def _local_identity_metadata(record: dict[str, Any]) -> dict[str, Any]:
                 and adapter.get("base_model_type") in _KNOWN_MODEL_TYPES
                 and adapter.get("compatibility") == _ADAPTER_COMPATIBILITY
             ):
-                expected_id = "sha256:" + sha256(
-                    canonical(
-                        {
-                            "config": adapter["config_sha256"],
-                            "weights": adapter["weights_sha256"],
-                        }
-                    ).encode("utf-8")
-                ).hexdigest()
+                expected_id = (
+                    "sha256:"
+                    + sha256(
+                        canonical(
+                            {
+                                "config": adapter["config_sha256"],
+                                "weights": adapter["weights_sha256"],
+                            }
+                        ).encode("utf-8")
+                    ).hexdigest()
+                )
                 if adapter["adapter_id"] == expected_id:
                     result["adapter"] = {
                         key: adapter[key]

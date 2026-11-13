@@ -13,7 +13,6 @@ from threadmark import WorkflowMemory
 from threadmark.active_context import ActiveContext, ContextBudgetExceeded
 from threadmark.schema import canonical
 
-
 CATALOG = [{"entity_id": "meeting", "fields": ["room", "owner"]}]
 CORE_ONLY = dict(history_entries=0, claim_entries=0, recent_events=0, search_events=0)
 
@@ -258,9 +257,7 @@ def test_historical_accepted_value_carries_proposal_acceptance_and_transition_so
     assert historical["evidence_event_ids"] == ["e2", "e3"]
     assert historical["superseded_by_event_id"] == "e4"
     proposal = next(
-        p
-        for p in context["proposals"]
-        if p["proposal_id"] == historical["proposal_id"]
+        p for p in context["proposals"] if p["proposal_id"] == historical["proposal_id"]
     )
     assert proposal["status"] == "accepted"
     assert proposal["proposal_event_id"] == "e2"
@@ -380,8 +377,7 @@ def test_linked_reason_brings_old_approved_version_and_entire_bundle_or_nothing(
     assert version["value"] == "Cedar"
     assert version["superseded_by_event_id"] == "e4"
     assert any(
-        row["proposal_id"] == version["proposal_id"]
-        and row["status"] == "accepted"
+        row["proposal_id"] == version["proposal_id"] and row["status"] == "accepted"
         for row in context["proposals"]
     )
     assert list(sources(complete)) == ["e2", "e3", "e4"]

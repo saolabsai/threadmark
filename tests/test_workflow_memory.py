@@ -1051,9 +1051,12 @@ def test_indexed_proposals_are_target_scoped_and_resolve_after_snapshot_restore(
     restored.ingest([event(2)])
     assert value(restored)["value"] == "Parquet"
     assert value(restored)["evidence_event_ids"] == ["e1", "e2"]
-    assert resolver.calls[0]["content"]["reference_context"]["open_proposals"][3][
-        "proposal_id"
-    ] == second
+    assert (
+        resolver.calls[0]["content"]["reference_context"]["open_proposals"][3][
+            "proposal_id"
+        ]
+        == second
+    )
     packet = restored.memory_packet()
     assert [p["status"] for p in packet["proposals"]] == [
         "open",

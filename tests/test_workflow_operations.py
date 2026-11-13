@@ -10,7 +10,6 @@ from threadmark.providers import Completion
 from threadmark.schema import canonical
 from threadmark.workflow_memory import HISTORY_REFERENCE_INSTRUCTIONS
 
-
 CATALOG = [{"entity_id": "meeting", "fields": ["room", "owner"]}]
 
 
@@ -454,9 +453,7 @@ def test_legacy_schema_one_restores_with_history_disabled_and_no_calls():
     assert restored.memory_packet() == memory.memory_packet()
     assert restored.snapshot()["schema_version"] == 2
     assert restored.snapshot()["prompts"] == legacy["prompts"]
-    restored.apply_operations(
-        [event(4)], journal(("e4", [operation("set", "Elm")]))
-    )
+    restored.apply_operations([event(4)], journal(("e4", [operation("set", "Elm")])))
     assert room(restored)["value"] == "Elm"
     assert room(memory)["value"] == "Oak"
 

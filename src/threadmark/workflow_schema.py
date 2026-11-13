@@ -22,7 +22,6 @@ from .workflow_memory import (
     MAX_PROPOSAL_REFERENCE_CHARS,
 )
 
-
 WORKFLOW_SCHEMA_VERSION = 1
 
 

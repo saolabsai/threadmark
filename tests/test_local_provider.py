@@ -567,7 +567,8 @@ def test_unsupported_adapter_configuration_fails_before_base_load(
 
 
 @pytest.mark.parametrize(
-    "problem", ["missing", "extra", "shape", "integer", "target", "model_type", "nonlinear"]
+    "problem",
+    ["missing", "extra", "shape", "integer", "target", "model_type", "nonlinear"],
 )
 def test_adapter_must_exactly_match_base_target_tensors(runtime, adapter, problem):
     key = next(iter(adapter.state))
@@ -634,9 +635,10 @@ def test_adapter_preserves_missing_eos_rejection_and_records_identity(runtime, a
     with pytest.raises(ProviderError, match="truncated"):
         complete(provider)
     assert provider.calls[0]["status"] == "incomplete"
-    assert provider.calls[0]["adapter"]["weights_sha256"] == sha256(
-        b"mock safetensors"
-    ).hexdigest()
+    assert (
+        provider.calls[0]["adapter"]["weights_sha256"]
+        == sha256(b"mock safetensors").hexdigest()
+    )
     assert len(runtime.model.generations) == 1
 
 
@@ -759,11 +761,15 @@ def test_structured_mode_can_toggle_sequentially_without_schema_state_leak(
     workflow_complete(provider)
     assert [r["structured_workflow"] for r in provider.calls] == [False, True, False]
     assert [bool(r["workflow_schema_sha256"]) for r in provider.calls] == [
-        False, True, False
+        False,
+        True,
+        False,
     ]
-    assert [
-        "prefix_allowed_tokens_fn" in g for g in runtime.model.generations
-    ] == [False, True, False]
+    assert ["prefix_allowed_tokens_fn" in g for g in runtime.model.generations] == [
+        False,
+        True,
+        False,
+    ]
     assert len(runtime.model_loads) == 1
 
 
@@ -792,7 +798,7 @@ def test_structured_mode_rejects_reader_or_malformed_requests_before_model_load(
         '{"events":[{"event_id":"e1","operations":[{"op":"set",'
         '"entity_id":"p","field":"owner","value":null,'
         '"proposal_id":null,"reason":null}]}]}',
-        'not-json',
+        "not-json",
     ],
 )
 def test_structured_postvalidation_rejects_even_native_eos_after_constraint_failure(

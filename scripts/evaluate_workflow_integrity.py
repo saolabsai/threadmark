@@ -22,7 +22,6 @@ import subprocess
 import sys
 import time
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCOPE = "offline recorded-extractor reducer integrity; not live extraction or answer accuracy"
 
@@ -36,10 +35,14 @@ def digest(path):
 
 
 def write_json(path, value):
-    path.write_text(json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(value, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
 
 
-def operation(kind, field="venue", value=None, *, entity="review", alias=None, reason=None):
+def operation(
+    kind, field="venue", value=None, *, entity="review", alias=None, reason=None
+):
     return dict(
         op=kind,
         entity_id=entity,
@@ -135,7 +138,11 @@ def build_cases():
                     "Orchard depends on room access and separately on the interpreter booking.",
                     [
                         o("note", "dependency", "Room access must be confirmed"),
-                        o("note", "dependency", "The interpreter booking must be confirmed"),
+                        o(
+                            "note",
+                            "dependency",
+                            "The interpreter booking must be confirmed",
+                        ),
                     ],
                 )
             ],
@@ -228,7 +235,12 @@ def build_cases():
                     "Orchard ROOM-S proposes Birch Hall; the separate Lakeside review ROOM-S proposes Elm Hall.",
                     [
                         o("propose", value="Birch Hall", alias="ROOM-S"),
-                        o("propose", value="Elm Hall", entity="lakeside", alias="ROOM-S"),
+                        o(
+                            "propose",
+                            value="Elm Hall",
+                            entity="lakeside",
+                            alias="ROOM-S",
+                        ),
                     ],
                 ),
                 (
@@ -245,7 +257,10 @@ def build_cases():
             [
                 ("Eli owns Orchard.", [o("set", "owner", "Eli")]),
                 ("Orchard venue is now Willow Hall.", [o("set", value="Willow Hall")]),
-                ("Orchard deadline is 27 November.", [o("set", "deadline", "27 November")]),
+                (
+                    "Orchard deadline is 27 November.",
+                    [o("set", "deadline", "27 November")],
+                ),
             ],
             dict(
                 fields=[["review", "owner", "Eli"], ["review", "venue", None]],
@@ -270,7 +285,13 @@ def build_cases():
                 ),
                 (
                     "Approve ROOM-T for Orchard because the hall has wheelchair access.",
-                    [o("accept", alias="ROOM-T", reason="The hall has wheelchair access")],
+                    [
+                        o(
+                            "accept",
+                            alias="ROOM-T",
+                            reason="The hall has wheelchair access",
+                        )
+                    ],
                 ),
                 ("Gita now owns Orchard, replacing Faye.", [o("set", "owner", "Gita")]),
             ],
@@ -289,9 +310,18 @@ def build_cases():
             "chronological-groups",
             "Provider group order cannot reorder source chronology",
             [
-                ("Orchard deadline is 20 November.", [o("set", "deadline", "20 November")]),
-                ("Correct Orchard deadline to 24 November.", [o("set", "deadline", "24 November")]),
-                ("The latest Orchard deadline is 26 November.", [o("set", "deadline", "26 November")]),
+                (
+                    "Orchard deadline is 20 November.",
+                    [o("set", "deadline", "20 November")],
+                ),
+                (
+                    "Correct Orchard deadline to 24 November.",
+                    [o("set", "deadline", "24 November")],
+                ),
+                (
+                    "The latest Orchard deadline is 26 November.",
+                    [o("set", "deadline", "26 November")],
+                ),
             ],
             dict(
                 fields=[["review", "deadline", "26 November"]],
@@ -308,11 +338,23 @@ def build_cases():
                     [o("propose", value="Aspen Hall", alias="ROOM-U")],
                 ),
                 ("Reject ROOM-U.", [o("reject", alias="ROOM-U")]),
-                ("Accept ROOM-U without a new proposal.", [o("accept", alias="ROOM-U")]),
-                ("ROOM-V proposes Beech Hall.", [o("propose", value="Beech Hall", alias="ROOM-V")]),
+                (
+                    "Accept ROOM-U without a new proposal.",
+                    [o("accept", alias="ROOM-U")],
+                ),
+                (
+                    "ROOM-V proposes Beech Hall.",
+                    [o("propose", value="Beech Hall", alias="ROOM-V")],
+                ),
                 (
                     "Approve ROOM-V because it has the required capacity.",
-                    [o("accept", alias="ROOM-V", reason="It has the required capacity")],
+                    [
+                        o(
+                            "accept",
+                            alias="ROOM-V",
+                            reason="It has the required capacity",
+                        )
+                    ],
                 ),
             ],
             dict(
@@ -380,17 +422,24 @@ class RecordedExtractor:
             raise AssertionError("Unexpected provider request fields")
         content = kwargs["content"]
         if set(content) != {"entity_catalog", "reference_context", "new_events"}:
-            raise AssertionError("Oracle, questions, or other data leaked into provider inputs")
+            raise AssertionError(
+                "Oracle, questions, or other data leaked into provider inputs"
+            )
         if content["entity_catalog"] != self.case["catalog"]:
             raise AssertionError("Unexpected catalog")
         for event in content["new_events"]:
             if event != self.allowed.get(event["event_id"]):
-                raise AssertionError("New event was changed or is outside the current ingest")
+                raise AssertionError(
+                    "New event was changed or is outside the current ingest"
+                )
             if set(event) != {"event_id", "timestamp", "sender", "text"}:
                 raise AssertionError("Expected answers leaked into event fields")
         self.requests.append(deepcopy(kwargs))
         failure = self.case.get("fail_event_index")
-        if failure is not None and self.case["events"][failure] in content["new_events"]:
+        if (
+            failure is not None
+            and self.case["events"][failure] in content["new_events"]
+        ):
             return self.completion_type(text='{"events":[],"unexpected":true}')
         groups = [
             dict(
@@ -408,14 +457,14 @@ def check_packet(memory, case):
     packet, checks = memory.memory_packet(), case["checks"]
     facts = {(f["entity_id"], f["field"]): f for f in packet["current_state"]["facts"]}
     for entity, field, expected in checks.get("fields", []):
-        assert facts[entity, field]["value"] == expected, (
-            f"Current value mismatch: {entity}/{field}"
-        )
+        assert (
+            facts[entity, field]["value"] == expected
+        ), f"Current value mismatch: {entity}/{field}"
     history = packet["fact_history"]
     if "history_values" in checks:
-        assert [v["value"] for v in history] == checks["history_values"], (
-            "History order/content differs"
-        )
+        assert [v["value"] for v in history] == checks[
+            "history_values"
+        ], "History order/content differs"
     if "history_count" in checks:
         assert len(history) == checks["history_count"], "History count differs"
     if "archive_count" in checks:
@@ -424,8 +473,7 @@ def check_packet(memory, case):
         assert memory.events == case["events"], "Original archive changed"
     if "proposals" in checks:
         assert [
-            [p["external_alias"], p["value"], p["status"]]
-            for p in packet["proposals"]
+            [p["external_alias"], p["value"], p["status"]] for p in packet["proposals"]
         ] == checks["proposals"], "Proposal resolution differs"
     if "notes" in checks:
         assert [
@@ -452,19 +500,31 @@ def check_packet(memory, case):
             if op["op"] == "note":
                 expected_notes.append(
                     [
-                        op["entity_id"], op["field"], op["value"],
-                        [event["event_id"]], event["timestamp"],
+                        op["entity_id"],
+                        op["field"],
+                        op["value"],
+                        [event["event_id"]],
+                        event["timestamp"],
                     ]
                 )
             if op["reason"] is not None:
                 expected_notes.append(
                     [
-                        op["entity_id"], "reason_for_" + op["field"], op["reason"],
-                        [event["event_id"]], event["timestamp"],
+                        op["entity_id"],
+                        "reason_for_" + op["field"],
+                        op["reason"],
+                        [event["event_id"]],
+                        event["timestamp"],
                     ]
                 )
     assert [
-        [n["entity_id"], n["predicate"], n["value"], n["evidence_event_ids"], n["observed_at"]]
+        [
+            n["entity_id"],
+            n["predicate"],
+            n["value"],
+            n["evidence_event_ids"],
+            n["observed_at"],
+        ]
         for n in packet["explanatory_claims"]
     ] == expected_notes, "Note content, order, or provenance differs"
     previous = {}
@@ -480,13 +540,13 @@ def check_packet(memory, case):
         target = (version["entity_id"], version["field"])
         old = previous.get(target)
         if old:
-            assert version["supersedes_version_id"] == old["version_id"], (
-                "Broken version chain"
-            )
+            assert (
+                version["supersedes_version_id"] == old["version_id"]
+            ), "Broken version chain"
             assert old["valid_to"] == version["observed_at"], "Broken version interval"
-            assert old["superseded_by_event_id"] == version["evidence_event_ids"][-1], (
-                "Broken superseding evidence"
-            )
+            assert (
+                old["superseded_by_event_id"] == version["evidence_event_ids"][-1]
+            ), "Broken superseding evidence"
         previous[target] = version
     for target, version in previous.items():
         assert version["valid_to"] is None, "Current version unexpectedly closed"
@@ -511,7 +571,8 @@ def evaluate_case(case, memory_type, settings_type, completion_type):
     )
     rolled_back = False
     for number, indices in enumerate(
-        case.get("batches", [list(range(len(case["events"])))])):
+        case.get("batches", [list(range(len(case["events"])))])
+    ):
         batch = [case["events"][i] for i in indices]
         provider.allowed = {e["event_id"]: e for e in batch}
         before = memory.snapshot()
@@ -522,12 +583,12 @@ def evaluate_case(case, memory_type, settings_type, completion_type):
         except ValueError:
             if not expected_failure:
                 raise
-            assert memory.snapshot() == before, (
-                "Failed ingestion committed partial changes"
-            )
-            assert len(provider.requests) - before_calls == 2, (
-                "Failure did not occur after a successful first chunk"
-            )
+            assert (
+                memory.snapshot() == before
+            ), "Failed ingestion committed partial changes"
+            assert (
+                len(provider.requests) - before_calls == 2
+            ), "Failure did not occur after a successful first chunk"
             rolled_back = True
         else:
             assert not expected_failure, "Malformed provider output was accepted"
@@ -597,17 +658,27 @@ def snapshot_sources(root, destination):
     if not (root / "src/threadmark/workflow_memory.py").is_file():
         raise ValueError("Source root must contain src/threadmark/workflow_memory.py")
     records = []
-    paths = [p for p in (root / "src/threadmark").rglob("*") if p.is_file() and p.suffix in {".py", ".json", ".typed"}]
+    paths = [
+        p
+        for p in (root / "src/threadmark").rglob("*")
+        if p.is_file() and p.suffix in {".py", ".json", ".typed"}
+    ]
     paths += [root / "pyproject.toml"]
     for path in sorted(paths):
         if path.is_symlink() or not path.resolve().is_relative_to(root):
-            raise ValueError("Source snapshots cannot contain external paths or symlinks")
+            raise ValueError(
+                "Source snapshots cannot contain external paths or symlinks"
+            )
         relative = path.relative_to(root)
         target = destination / relative
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_bytes(path.read_bytes())
         records.append(
-            dict(path=relative.as_posix(), sha256=digest(target), bytes=target.stat().st_size)
+            dict(
+                path=relative.as_posix(),
+                sha256=digest(target),
+                bytes=target.stat().st_size,
+            )
         )
     return dict(
         files=records,
@@ -666,15 +737,20 @@ def main(argv=None):
     for arm in arms:
         result_path = output / f"{arm}.json"
         env = {
-            k: v for k, v in os.environ.items()
-            if k not in {"PYTHONPATH", "PYTHONHOME"}
+            k: v for k, v in os.environ.items() if k not in {"PYTHONPATH", "PYTHONHOME"}
         }
         process = subprocess.run(
             [
-                sys.executable, "-I", "-B", str(script),
-                "--_worker", str(output / "sources" / arm),
-                "--_cases", str(output / "fictional-cases.json"),
-                "--_result", str(result_path),
+                sys.executable,
+                "-I",
+                "-B",
+                str(script),
+                "--_worker",
+                str(output / "sources" / arm),
+                "--_cases",
+                str(output / "fictional-cases.json"),
+                "--_result",
+                str(result_path),
             ],
             capture_output=True,
             text=True,
@@ -701,7 +777,9 @@ def main(argv=None):
     if "baseline" in results:
         old = {r["case_id"]: r["passed"] for r in results["baseline"]["cases"]}
         summary["paired_changes"] = [
-            dict(case_id=r["case_id"], baseline=old[r["case_id"]], candidate=r["passed"])
+            dict(
+                case_id=r["case_id"], baseline=old[r["case_id"]], candidate=r["passed"]
+            )
             for r in results["candidate"]["cases"]
         ]
     write_json(output / "summary.json", summary)

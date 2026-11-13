@@ -10,7 +10,6 @@ import pytest
 
 from threadmark import Completion, Settings, WorkflowMemory
 
-
 SCRIPT = Path(__file__).resolve().parents[1] / "scripts/evaluate_workflow_integrity.py"
 SPEC = importlib.util.spec_from_file_location("workflow_integrity_eval", SCRIPT)
 EVAL = importlib.util.module_from_spec(SPEC)
@@ -81,17 +80,25 @@ def test_packet_checks_detect_wrong_state_and_missing_explanatory_content():
         EVAL.check_packet(memory, wrong)
 
 
-def test_source_snapshot_and_subprocess_report_are_explicitly_offline(tmp_path, monkeypatch):
+def test_source_snapshot_and_subprocess_report_are_explicitly_offline(
+    tmp_path, monkeypatch
+):
     # Test the real subprocess/import boundary with two source copies; no model.
     root = SCRIPT.parents[1]
     output = tmp_path / "result"
-    assert EVAL.main(
-        [
-            "--source-root", str(root),
-            "--baseline-root", str(root),
-            "--output", str(output),
-        ]
-    ) == 0
+    assert (
+        EVAL.main(
+            [
+                "--source-root",
+                str(root),
+                "--baseline-root",
+                str(root),
+                "--output",
+                str(output),
+            ]
+        )
+        == 0
+    )
     protocol = json.loads((output / "protocol.json").read_text(encoding="utf-8"))
     result = json.loads((output / "summary.json").read_text(encoding="utf-8"))
     assert protocol["model_calls"] == protocol["api_calls"] == 0

@@ -61,7 +61,9 @@ def proposal_identifier(
     """Identify a proposal in its event/target order, preserving legacy IDs."""
     if type(occurrence) is not int or not 1 <= occurrence <= 128:
         raise ValueError("Proposal occurrence must be an integer from 1 to 128")
-    identifier = "::".join(quote(part, safe="") for part in (event_id, entity_id, field))
+    identifier = "::".join(
+        quote(part, safe="") for part in (event_id, entity_id, field)
+    )
     return identifier if occurrence == 1 else f"{identifier}::{occurrence}"
 
 
@@ -125,7 +127,9 @@ class WorkflowMemory:
             type(reference_history_entries) is not int
             or not 0 <= reference_history_entries <= 256
         ):
-            raise ValueError("reference_history_entries must be an integer from 0 to 256")
+            raise ValueError(
+                "reference_history_entries must be an integer from 0 to 256"
+            )
         self._catalog = public_catalog(catalog)
         self._keys = catalog_keys(self._catalog)
         self._key_set = set(self._keys)
@@ -455,10 +459,7 @@ class WorkflowMemory:
                 ("recent_history", item, item["valid_to"])
                 for item in data["versions"]
                 if item["valid_to"] is not None
-            ] + [
-                ("recent_claims", item, item["observed_at"])
-                for item in data["notes"]
-            ]
+            ] + [("recent_claims", item, item["observed_at"]) for item in data["notes"]]
             positions = {
                 event["event_id"]: index
                 for index, event in enumerate(
@@ -513,7 +514,9 @@ class WorkflowMemory:
         text = operations if isinstance(operations, str) else canonical(operations)
         groups = self._validate(text, new_events)
         candidate = deepcopy(self._data)
-        self._apply(candidate, groups, {event["event_id"]: event for event in new_events})
+        self._apply(
+            candidate, groups, {event["event_id"]: event for event in new_events}
+        )
         allowed = {event["event_id"] for event in [*self._events, *new_events]}
         candidate["current"] = validate_facts(
             candidate["current"], self._keys, allowed, self.settings, memory=True

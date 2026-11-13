@@ -82,12 +82,16 @@ def _source_ids(value: Any) -> set[str]:
         for key, item in value.items():
             if key == "evidence_event_ids" and isinstance(item, list):
                 result.update(item)
-            elif key in {
-                "event_id",
-                "proposal_event_id",
-                "resolution_event_id",
-                "superseded_by_event_id",
-            } and item is not None:
+            elif (
+                key
+                in {
+                    "event_id",
+                    "proposal_event_id",
+                    "resolution_event_id",
+                    "superseded_by_event_id",
+                }
+                and item is not None
+            ):
                 result.add(item)
             elif isinstance(item, (dict, list)):
                 result.update(_source_ids(item))
@@ -277,16 +281,13 @@ class ActiveContext:
             ]
             counts = {
                 "source_events": (len(source_ids), len(events)),
-                "current_facts": (
-                    len(current), len(packet["current_state"]["facts"])
-                ),
+                "current_facts": (len(current), len(packet["current_state"]["facts"])),
                 "fact_history": (len(context["fact_history"]), len(histories)),
                 "proposals": (len(context["proposals"]), len(proposals)),
-                "explanatory_claims": (
-                    len(context["explanatory_claims"]), len(claims)
-                ),
+                "explanatory_claims": (len(context["explanatory_claims"]), len(claims)),
                 "unresolved_references": (
-                    len(unresolved), len(packet["unresolved_references"])
+                    len(unresolved),
+                    len(packet["unresolved_references"]),
                 ),
             }
             return {
@@ -346,7 +347,9 @@ class ActiveContext:
             if candidate_tokens <= max_input_tokens:
                 selected = trial
                 content, rendered, tokens = (
-                    candidate_content, candidate_rendered, candidate_tokens
+                    candidate_content,
+                    candidate_rendered,
+                    candidate_tokens,
                 )
 
         if history_entries:
